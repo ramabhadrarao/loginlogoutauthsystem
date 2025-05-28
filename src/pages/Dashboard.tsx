@@ -443,6 +443,14 @@ const Dashboard = () => {
             requiredPermission="settings.update"
             color="indigo"
           />
+          <QuickAction
+            title="ABAC Management"
+            description="Dynamic access control"
+            icon={<Shield className="h-5 w-5" />}
+            to="/admin/abac"
+            requiredPermission="abac.manage"
+            color="purple"
+          />
         </div>
       </div>
 

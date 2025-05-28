@@ -11,7 +11,7 @@ import AuditLog from './pages/admin/AuditLog';
 import UsersList from './pages/users/UsersList';
 import CollegesList from './pages/colleges/CollegesList';
 import DepartmentsList from './pages/departments/DepartmentsList'; // ADD THIS
-import ABACManagement from './pages/admin/ABACManagement';
+import ABACManagement from './pages/admin/ABACManagement'; // ADD THIS IMPORT
 
 
 import AttachmentsList from './pages/attachments/AttachmentsList';

@@ -1,8 +1,8 @@
-// src/components/layout/Sidebar.tsx - Updated version with dynamic settings
+// src/components/layout/Sidebar.tsx - Fixed version with ABAC support
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../utils/auth';
-import { useSettings } from '../../hooks/useSettings'; // Add this import
+import { useSettings } from '../../hooks/useSettings';
 import { MenuItem } from '../../types';
 import { X } from 'lucide-react';
 import * as Icons from 'lucide-react';
@@ -21,7 +21,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const { hasPermission, hasAnyPermission, user, getEffectivePermissions } = useAuth();
-  const { getSetting } = useSettings(); // Add this hook
+  const { getSetting } = useSettings();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -148,7 +148,8 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     const adminPermissions = [
       'permissions.manage',
       'models.manage', 
-      'audit.read'
+      'audit.read',
+      'abac.manage'
     ];
 
     const hasAdminAccess = hasAnyPermission(adminPermissions);
@@ -199,12 +200,26 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         });
       }
 
+      // ABAC Management
+      if (hasPermission('abac.manage')) {
+        adminChildren.push({
+          _id: (adminItemId++).toString(),
+          name: 'ABAC Management',
+          route: '/admin/abac',
+          icon: 'Shield',
+          requiredPermission: 'abac.manage',
+          sortOrder: 4,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
       // Only add admin menu if there are children
       if (adminChildren.length > 0) {
         menuItems.push({
           _id: (itemId++).toString(),
           name: 'Administration',
-          icon: 'Shield',
+          icon: 'ShieldCheck',
           route: '/admin',
           requiredPermission: 'admin.access',
           sortOrder: 7,
@@ -212,17 +227,19 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           children: adminChildren
         });
       }
-      if (hasPermission('abac.manage')) {
-  menuItems.push({
-    _id: (itemId++).toString(),
-    name: 'ABAC Rules',
-    route: '/admin/abac',
-    icon: 'Shield',
-    requiredPermission: 'abac.manage',
-    sortOrder: 8,
-    isActive: true
-  });
-}
+    }
+
+    // Add standalone ABAC if user has permission but no other admin access
+    if (hasPermission('abac.manage') && !hasAdminAccess) {
+      menuItems.push({
+        _id: (itemId++).toString(),
+        name: 'ABAC Management',
+        route: '/admin/abac',
+        icon: 'Shield',
+        requiredPermission: 'abac.manage',
+        sortOrder: 8,
+        isActive: true
+      });
     }
 
     return menuItems;
