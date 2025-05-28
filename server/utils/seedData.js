@@ -1,11 +1,16 @@
-// server/utils/seedData.js
+// server/utils/seedData.js - Updated with academic structure models
 import User from '../models/User.js';
 import Model from '../models/Model.js';
 import Permission from '../models/Permission.js';
 import College from '../models/College.js';
+import Department from '../models/Department.js';
+import Program from '../models/Program.js';
+import Branch from '../models/Branch.js';
+import AcademicYear from '../models/AcademicYear.js';
 import SystemSetting from '../models/SystemSetting.js';
 import MenuItem from '../models/MenuItem.js';
-// Add this to your existing settings array in the seedDatabase function
+
+// Upload settings array
 const uploadSettings = [
   // File Upload Limits
   {
@@ -143,6 +148,7 @@ const uploadSettings = [
     description: 'Log all file upload attempts for auditing'
   }
 ];
+
 export const seedDatabase = async () => {
   try {
     // Check if data already exists
@@ -154,7 +160,7 @@ export const seedDatabase = async () => {
 
     console.log('Seeding database...');
 
-    // 1. Create Models
+    // 1. Create Models (including new academic structure models)
     const models = [
       {
         name: 'users',
@@ -165,6 +171,41 @@ export const seedDatabase = async () => {
         name: 'colleges',
         displayName: 'Colleges',
         description: 'Educational institutions'
+      },
+      {
+        name: 'departments',
+        displayName: 'Departments',
+        description: 'Academic departments within colleges'
+      },
+      {
+        name: 'programs',
+        displayName: 'Programs',
+        description: 'Academic programs leading to degrees'
+      },
+      {
+        name: 'branches',
+        displayName: 'Branches',
+        description: 'Specialization branches within programs'
+      },
+      {
+        name: 'academic_years',
+        displayName: 'Academic Years',
+        description: 'Academic year management'
+      },
+      {
+        name: 'regulations',
+        displayName: 'Regulations',
+        description: 'Academic regulations and policies'
+      },
+      {
+        name: 'semesters',
+        displayName: 'Semesters',
+        description: 'Semester management'
+      },
+      {
+        name: 'batches',
+        displayName: 'Batches',
+        description: 'Student batch management'
       },
       {
         name: 'attachments',
@@ -185,6 +226,11 @@ export const seedDatabase = async () => {
         name: 'admin',
         displayName: 'Admin',
         description: 'Administrative functions'
+      },
+      {
+        name: 'abac',
+        displayName: 'ABAC',
+        description: 'Attribute-Based Access Control'
       }
     ];
 
@@ -215,6 +261,28 @@ export const seedDatabase = async () => {
           modelId: model._id,
           action: 'delete',
           permissionKey: 'audit.read'
+        });
+      } else if (model.name === 'abac') {
+        // Special permissions for ABAC
+        permissions.push({
+          modelId: model._id,
+          action: 'read',
+          permissionKey: 'abac.read'
+        });
+        permissions.push({
+          modelId: model._id,
+          action: 'create',
+          permissionKey: 'abac.manage'
+        });
+        permissions.push({
+          modelId: model._id,
+          action: 'update',
+          permissionKey: 'abac.manage'
+        });
+        permissions.push({
+          modelId: model._id,
+          action: 'delete',
+          permissionKey: 'abac.manage'
         });
       } else if (model.name === 'dashboard') {
         permissions.push({
@@ -253,7 +321,7 @@ export const seedDatabase = async () => {
 
     // 4. Create Regular Demo User
     const demoPermissions = createdPermissions.filter(p => 
-      ['dashboard.read', 'colleges.read', 'attachments.read', 'settings.read'].includes(p.permissionKey)
+      ['dashboard.read', 'colleges.read', 'departments.read', 'programs.read', 'branches.read', 'academic_years.read', 'attachments.read', 'settings.read'].includes(p.permissionKey)
     );
 
     const demoUser = new User({
@@ -299,21 +367,143 @@ export const seedDatabase = async () => {
       }
     ];
 
-    await College.insertMany(colleges);
+    const createdColleges = await College.insertMany(colleges);
     console.log('✓ Sample colleges created');
 
-    // 6. Create System Settings
+    // 6. Create Sample Departments
+    const departments = [
+      {
+        name: 'Computer Science',
+        code: 'CS',
+        collegeId: createdColleges[0]._id,
+        email: 'cs@stanford.edu',
+        description: 'Computer Science Department',
+        status: 'active'
+      },
+      {
+        name: 'Electrical Engineering',
+        code: 'EE',
+        collegeId: createdColleges[1]._id,
+        email: 'ee@mit.edu',
+        description: 'Electrical Engineering Department',
+        status: 'active'
+      },
+      {
+        name: 'Mathematics',
+        code: 'MATH',
+        collegeId: createdColleges[2]._id,
+        email: 'math@harvard.edu',
+        description: 'Mathematics Department',
+        status: 'active'
+      }
+    ];
+
+    const createdDepartments = await Department.insertMany(departments);
+    console.log('✓ Sample departments created');
+
+    // 7. Create Sample Programs
+    const programs = [
+      {
+        name: 'Bachelor of Computer Science',
+        code: 'BCS',
+        departmentId: createdDepartments[0]._id,
+        duration: '4 years',
+        degreeType: "Bachelor's",
+        description: 'Undergraduate program in Computer Science',
+        status: 'active'
+      },
+      {
+        name: 'Master of Electrical Engineering',
+        code: 'MEE',
+        departmentId: createdDepartments[1]._id,
+        duration: '2 years',
+        degreeType: "Master's",
+        description: 'Graduate program in Electrical Engineering',
+        status: 'active'
+      },
+      {
+        name: 'Doctor of Philosophy in Mathematics',
+        code: 'PHD-MATH',
+        departmentId: createdDepartments[2]._id,
+        duration: '5 years',
+        degreeType: 'Doctoral',
+        description: 'Doctoral program in Mathematics',
+        status: 'active'
+      }
+    ];
+
+    const createdPrograms = await Program.insertMany(programs);
+    console.log('✓ Sample programs created');
+
+    // 8. Create Sample Branches
+    const branches = [
+      {
+        name: 'Artificial Intelligence',
+        code: 'AI',
+        programId: createdPrograms[0]._id,
+        description: 'AI specialization in Computer Science',
+        status: 'active'
+      },
+      {
+        name: 'Data Science',
+        code: 'DS',
+        programId: createdPrograms[0]._id,
+        description: 'Data Science specialization in Computer Science',
+        status: 'active'
+      },
+      {
+        name: 'Power Systems',
+        code: 'PS',
+        programId: createdPrograms[1]._id,
+        description: 'Power Systems specialization in Electrical Engineering',
+        status: 'active'
+      }
+    ];
+
+    const createdBranches = await Branch.insertMany(branches);
+    console.log('✓ Sample branches created');
+
+    // 9. Create Sample Academic Year
+    const academicYears = [
+      {
+        name: '2024-2025',
+        code: 'AY2024-25',
+        startYear: 2024,
+        endYear: 2025,
+        startDate: new Date('2024-08-01'),
+        endDate: new Date('2025-07-31'),
+        isCurrent: true,
+        description: 'Academic Year 2024-2025',
+        status: 'active'
+      },
+      {
+        name: '2025-2026',
+        code: 'AY2025-26',
+        startYear: 2025,
+        endYear: 2026,
+        startDate: new Date('2025-08-01'),
+        endDate: new Date('2026-07-31'),
+        isCurrent: false,
+        description: 'Academic Year 2025-2026',
+        status: 'upcoming'
+      }
+    ];
+
+    await AcademicYear.insertMany(academicYears);
+    console.log('✓ Sample academic years created');
+
+    // 10. Create System Settings
     const settings = [
       {
         settingKey: 'site.name',
-        settingValue: 'Permission System',
+        settingValue: 'Academic Management System',
         settingGroup: 'general',
         isPublic: true,
         description: 'The name of the site'
       },
       {
         settingKey: 'site.description',
-        settingValue: 'Multi-user authentication and permission system',
+        settingValue: 'Comprehensive academic management and permission system',
         settingGroup: 'general',
         isPublic: true,
         description: 'The description of the site'
@@ -346,15 +536,14 @@ export const seedDatabase = async () => {
         isPublic: false,
         description: 'Number of minutes before user sessions timeout'
       },
-       // Add upload settings
+      // Add upload settings
       ...uploadSettings
-      
     ];
 
     await SystemSetting.insertMany(settings);
     console.log('✓ System settings created');
 
-    // 7. Create Menu Items
+    // 11. Create Menu Items
     const menuItems = [
       {
         name: 'Dashboard',
@@ -381,11 +570,43 @@ export const seedDatabase = async () => {
         isActive: true
       },
       {
+        name: 'Departments',
+        route: '/departments',
+        icon: 'Building2',
+        requiredPermission: 'departments.read',
+        sortOrder: 4,
+        isActive: true
+      },
+      {
+        name: 'Programs',
+        route: '/programs',
+        icon: 'GraduationCap',
+        requiredPermission: 'programs.read',
+        sortOrder: 5,
+        isActive: true
+      },
+      {
+        name: 'Branches',
+        route: '/branches',
+        icon: 'GitBranch',
+        requiredPermission: 'branches.read',
+        sortOrder: 6,
+        isActive: true
+      },
+      {
+        name: 'Academic Years',
+        route: '/academic-years',
+        icon: 'Calendar',
+        requiredPermission: 'academic_years.read',
+        sortOrder: 7,
+        isActive: true
+      },
+      {
         name: 'Files',
         route: '/attachments',
         icon: 'File',
         requiredPermission: 'attachments.read',
-        sortOrder: 4,
+        sortOrder: 8,
         isActive: true
       },
       {
@@ -393,7 +614,7 @@ export const seedDatabase = async () => {
         route: '/settings',
         icon: 'Settings',
         requiredPermission: 'settings.read',
-        sortOrder: 5,
+        sortOrder: 9,
         isActive: true
       }
     ];
@@ -402,11 +623,11 @@ export const seedDatabase = async () => {
 
     // Create Admin menu with children
     const adminMenu = new MenuItem({
-      name: 'Admin',
+      name: 'Administration',
       route: '/admin',
       icon: 'Shield',
       requiredPermission: 'admin.access',
-      sortOrder: 6,
+      sortOrder: 10,
       isActive: true
     });
 
@@ -439,6 +660,15 @@ export const seedDatabase = async () => {
         sortOrder: 3,
         isActive: true,
         parentId: adminMenu._id
+      },
+      {
+        name: 'ABAC Management',
+        route: '/admin/abac',
+        icon: 'ShieldCheck',
+        requiredPermission: 'abac.read',
+        sortOrder: 4,
+        isActive: true,
+        parentId: adminMenu._id
       }
     ];
 
@@ -449,6 +679,13 @@ export const seedDatabase = async () => {
     console.log('Login credentials:');
     console.log('Admin: admin@example.com / password123');
     console.log('Demo: demo@example.com / password123');
+    console.log('');
+    console.log('Created sample data:');
+    console.log('- 3 Colleges with departments');
+    console.log('- 3 Programs with branches');
+    console.log('- 2 Academic years');
+    console.log('- Complete menu structure');
+    console.log('- All permissions and models');
 
   } catch (error) {
     console.error('Error seeding database:', error);

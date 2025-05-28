@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>ABAC Routes Documentation</title>
+    <!-- Tabler CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet"/>
+    <!-- Tabler Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.44.0/icons-sprite.svg" rel="stylesheet"/>
+    <style>
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .method-get { color: #198754; font-weight: 600; }
+        .method-post { color: #0d6efd; font-weight: 600; }
+        .method-put { color: #fd7e14; font-weight: 600; }
+        .method-delete { color: #dc3545; font-weight: 600; }
+        .response-example {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .sticky-toc {
+            position: sticky;
+            top: 2rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+        .toc-link {
+            display: block;
+            padding: 0.375rem 0.75rem;
+            color: #6b7280;
+            text-decoration: none;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .toc-link:hover {
+            background-color: #f8f9fa;
+            border-left-color: #0d6efd;
+            color: #0d6efd;
+        }
+        .toc-link.active {
+            background-color: #e7f1ff;
+            border-left-color: #0d6efd;
+            color: #0d6efd;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <header class="navbar navbar-expand-md navbar-light">
+            <div class="container-xl">
+                <h1 class="navbar-brand">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-shield-check" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M9 12l2 2l4 -4"></path>
+                        <path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"></path>
+                    </svg>
+                    ABAC API Documentation
+                </h1>
+                <div class="navbar-nav">
+                    <a href="#overview" class="nav-link">Overview</a>
+                    <a href="#authentication" class="nav-link">Authentication</a>
+                    <a href="#endpoints" class="nav-link">Endpoints</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-wrapper">
+            <div class="container-xl">
+                <div class="row">
+                    <!-- Table of Contents -->
+                    <div class="col-md-3">
+                        <div class="sticky-toc">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Table of Contents</h3>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    <a href="#overview" class="toc-link">Overview</a>
+                                    <a href="#authentication" class="toc-link">Authentication</a>
+                                    <a href="#attributes" class="toc-link">Attribute Definitions</a>
+                                    <a href="#policies" class="toc-link">Policy Rules</a>
+                                    <a href="#user-attributes" class="toc-link">User Attributes</a>
+                                    <a href="#evaluations" class="toc-link">Policy Evaluations</a>
+                                    <a href="#utilities" class="toc-link">Utilities</a>
+                                    <a href="#examples" class="toc-link">Examples</a>
+                                    <a href="#error-handling" class="toc-link">Error Handling</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="col-md-9">
+                        <!-- Overview Section -->
+                        <section id="overview" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">ABAC (Attribute-Based Access Control) API</h2>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">The ABAC API provides dynamic, fine-grained access control based on attributes of users, resources, actions, and environment context.</p>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-sm-6">
+                                            <strong>Base URL:</strong> <code>/api/abac</code>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <strong>Authentication:</strong> Bearer Token Required
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info">
+                                        <h4 class="alert-title">Key Concepts</h4>
+                                        <ul class="mb-0">
+                                            <li><strong>Attributes:</strong> Properties of users, resources, or environment</li>
+                                            <li><strong>Policies:</strong> Rules that define access permissions</li>
+                                            <li><strong>Evaluation:</strong> Process of checking if access should be granted</li>
+                                            <li><strong>Context:</strong> Environmental factors like time, location, etc.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Authentication Section -->
+                        <section id="authentication" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Authentication</h3>
+                                </div>
+                                <div class="card-body">
+                                    <p>All ABAC endpoints require authentication using a Bearer token:</p>
+                                    <div class="code-block">
+                                        <strong>Header:</strong><br>
+                                        Authorization: Bearer &lt;your-jwt-token&gt;
+                                    </div>
+                                    
+                                    <div class="alert alert-warning">
+                                        <strong>Required Permissions:</strong>
+                                        <ul class="mb-0">
+                                            <li><code>abac.read</code> - View attributes, policies, evaluations</li>
+                                            <li><code>abac.manage</code> - Create, update, delete policies and attributes</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Attribute Definitions Section -->
+                        <section id="attributes" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Attribute Definitions</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <!-- Get All Attributes -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-get">GET</span> /api/abac/attributes</h4>
+                                        <p>Retrieve all attribute definitions</p>
+                                        
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block response-example">
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "department",
+    "displayName": "Department",
+    "dataType": "reference",
+    "referenceModel": "Department",
+    "category": "user",
+    "isRequired": false,
+    "isActive": true,
+    "description": "User's department affiliation",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+                                        </div>
+                                    </div>
+
+                                    <!-- Create Attribute -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-post">POST</span> /api/abac/attributes</h4>
+                                        <p>Create a new attribute definition</p>
+                                        
+                                        <h5>Request Body:</h5>
+                                        <div class="code-block">
+{
+  "name": "security_clearance",
+  "displayName": "Security Clearance",
+  "dataType": "string",
+  "category": "user",
+  "possibleValues": [
+    {"value": "public", "label": "Public"},
+    {"value": "confidential", "label": "Confidential"},
+    {"value": "secret", "label": "Secret"}
+  ],
+  "isRequired": true,
+  "description": "User's security clearance level"
+}
+                                        </div>
+                                    </div>
+
+                                    <!-- Update Attribute -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-put">PUT</span> /api/abac/attributes/:id</h4>
+                                        <p>Update an existing attribute definition</p>
+                                        
+                                        <h5>Request Body:</h5>
+                                        <div class="code-block">
+{
+  "displayName": "Updated Display Name",
+  "description": "Updated description"
+}
+                                        </div>
+                                    </div>
+
+                                    <!-- Delete Attribute -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-delete">DELETE</span> /api/abac/attributes/:id</h4>
+                                        <p>Deactivate an attribute definition</p>
+                                        
+                                        <div class="alert alert-info">
+                                            <strong>Note:</strong> Attributes are deactivated, not permanently deleted, to maintain data integrity.
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Policy Rules Section -->
+                        <section id="policies" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Policy Rules</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <!-- Get All Policies -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-get">GET</span> /api/abac/policies</h4>
+                                        <p>Retrieve all policy rules with optional filtering</p>
+                                        
+                                        <h5>Query Parameters:</h5>
+                                        <div class="code-block">
+?modelName=Student&isActive=true
+                                        </div>
+
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block response-example">
+[
+  {
+    "_id": "507f1f77bcf86cd799439012",
+    "name": "Department Access Policy",
+    "description": "Users can only access records from their department",
+    "isActive": true,
+    "priority": 100,
+    "subject": "user",
+    "subjectConditions": [
+      {
+        "attribute": "department",
+        "operator": "equals",
+        "value": "CS",
+        "logicalOperator": "AND"
+      }
+    ],
+    "resource": {
+      "modelName": "Student",
+      "resourceConditions": [
+        {
+          "attribute": "departmentId",
+          "operator": "same_as_user",
+          "referenceUserAttribute": "departmentId"
+        }
+      ]
+    },
+    "actions": ["read", "update"],
+    "effect": "allow",
+    "createdBy": "507f1f77bcf86cd799439013",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+                                        </div>
+                                    </div>
+
+                                    <!-- Create Policy -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-post">POST</span> /api/abac/policies</h4>
+                                        <p>Create a new policy rule</p>
+                                        
+                                        <h5>Request Body:</h5>
+                                        <div class="code-block response-example">
+{
+  "name": "Time-Based Access Policy",
+  "description": "Allow access only during business hours",
+  "isActive": true,
+  "priority": 50,
+  "subject": "user",
+  "subjectConditions": [
+    {
+      "attribute": "role",
+      "operator": "in",
+      "value": ["faculty", "staff"],
+      "logicalOperator": "AND"
+    }
+  ],
+  "resource": {
+    "modelName": "Course",
+    "resourceConditions": [
+      {
+        "attribute": "status",
+        "operator": "equals",
+        "value": "active"
+      }
+    ]
+  },
+  "actions": ["read", "update"],
+  "environmentConditions": [
+    {
+      "attribute": "currentHour",
+      "operator": "between",
+      "value": [9, 17]
+    }
+  ],
+  "effect": "allow",
+  "timeBasedAccess": {
+    "allowedHours": [
+      {"start": "09:00", "end": "17:00"}
+    ],
+    "allowedDays": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+  }
+}
+                                        </div>
+                                    </div>
+
+                                    <!-- Update Policy -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-put">PUT</span> /api/abac/policies/:id</h4>
+                                        <p>Update an existing policy rule</p>
+                                        
+                                        <h5>Request Body:</h5>
+                                        <div class="code-block">
+{
+  "name": "Updated Policy Name",
+  "isActive": false,
+  "priority": 75
+}
+                                        </div>
+                                    </div>
+
+                                    <!-- Delete Policy -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-delete">DELETE</span> /api/abac/policies/:id</h4>
+                                        <p>Deactivate a policy rule</p>
+                                    </div>
+
+                                    <!-- Test Policy -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-post">POST</span> /api/abac/policies/test</h4>
+                                        <p>Test policy evaluation with specific parameters</p>
+                                        
+                                        <h5>Request Body:</h5>
+                                        <div class="code-block">
+{
+  "userId": "507f1f77bcf86cd799439014",
+  "resource": {
+    "modelName": "Student",
+    "_id": "507f1f77bcf86cd799439015",
+    "departmentId": "507f1f77bcf86cd799439016",
+    "status": "active"
+  },
+  "action": "read",
+  "context": {
+    "ipAddress": "192.168.1.100",
+    "userAgent": "Mozilla/5.0..."
+  }
+}
+                                        </div>
+
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block response-example">
+{
+  "decision": "allow",
+  "policies": [
+    {
+      "policyId": "507f1f77bcf86cd799439012",
+      "policyName": "Department Access Policy",
+      "matched": true,
+      "effect": "allow",
+      "conditions": [
+        {
+          "type": "subject",
+          "attribute": "department",
+          "operator": "equals",
+          "expectedValue": "CS",
+          "actualValue": "CS",
+          "result": true
+        }
+      ]
+    }
+  ],
+  "evaluationTime": 25
+}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- User Attributes Section -->
+                        <section id="user-attributes" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">User Attributes</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <!-- Get User Attributes -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-get">GET</span> /api/abac/users/:userId/attributes</h4>
+                                        <p>Retrieve all attributes for a specific user</p>
+                                        
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block response-example">
+[
+  {
+    "_id": "507f1f77bcf86cd799439017",
+    "userId": "507f1f77bcf86cd799439014",
+    "attributeName": "security_clearance",
+    "attributeValue": "confidential",
+    "setBy": {
+      "_id": "507f1f77bcf86cd799439018",
+      "username": "admin",
+      "email": "admin@example.com"
+    },
+    "validFrom": "2024-01-01T00:00:00.000Z",
+    "validUntil": "2024-12-31T23:59:59.999Z",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+                                        </div>
+                                    </div>
+
+                                    <!-- Set User Attribute -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-post">POST</span> /api/abac/users/:userId/attributes</h4>
+                                        <p>Set or update a user attribute</p>
+                                        
+                                        <h5>Request Body:</h5>
+                                        <div class="code-block">
+{
+  "attributeName": "security_clearance",
+  "attributeValue": "secret",
+  "validFrom": "2024-01-01T00:00:00.000Z",
+  "validUntil": "2024-12-31T23:59:59.999Z"
+}
+                                        </div>
+                                    </div>
+
+                                    <!-- Remove User Attribute -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-delete">DELETE</span> /api/abac/users/:userId/attributes/:attributeName</h4>
+                                        <p>Remove a user attribute</p>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Policy Evaluations Section -->
+                        <section id="evaluations" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Policy Evaluations (Audit)</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <!-- Get Evaluations -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-get">GET</span> /api/abac/evaluations</h4>
+                                        <p>Retrieve policy evaluation logs</p>
+                                        
+                                        <h5>Query Parameters:</h5>
+                                        <div class="code-block">
+?userId=507f1f77bcf86cd799439014&modelName=Student&action=read&decision=allow&limit=50&page=1
+                                        </div>
+
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block response-example">
+{
+  "evaluations": [
+    {
+      "_id": "507f1f77bcf86cd799439019",
+      "userId": {
+        "_id": "507f1f77bcf86cd799439014",
+        "username": "john.doe",
+        "email": "john@example.com"
+      },
+      "resource": {
+        "modelName": "Student",
+        "resourceId": "507f1f77bcf86cd799439015"
+      },
+      "action": "read",
+      "finalDecision": "allow",
+      "evaluationTimeMs": 25,
+      "ipAddress": "192.168.1.100",
+      "timestamp": "2024-01-01T10:30:00.000Z"
+    }
+  ],
+  "totalCount": 150,
+  "currentPage": 1,
+  "totalPages": 3
+}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Utilities Section -->
+                        <section id="utilities" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Utilities</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <!-- Get Models -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-get">GET</span> /api/abac/models</h4>
+                                        <p>Get available models for policy creation</p>
+                                        
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block">
+[
+  {
+    "_id": "507f1f77bcf86cd79943901a",
+    "name": "students",
+    "displayName": "Students"
+  },
+  {
+    "_id": "507f1f77bcf86cd79943901b",
+    "name": "courses",
+    "displayName": "Courses"
+  }
+]
+                                        </div>
+                                    </div>
+
+                                    <!-- Get My Scope -->
+                                    <div class="mb-4">
+                                        <h4><span class="method-get">GET</span> /api/abac/my-scope/:modelName</h4>
+                                        <p>Get data scope for current user</p>
+                                        
+                                        <h5>Response Example:</h5>
+                                        <div class="code-block">
+{
+  "hasAccess": true,
+  "filter": {
+    "departmentId": "507f1f77bcf86cd799439016"
+  }
+}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Examples Section -->
+                        <section id="examples" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Common Examples</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h4>JavaScript/Fetch Example</h4>
+                                            <div class="code-block response-example">
+// Get all policies
+const response = await fetch('/api/abac/policies', {
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  }
+});
+const policies = await response.json();
+
+// Create a new policy  
+const newPolicy = await fetch('/api/abac/policies', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Department Read Policy',
+    description: 'Allow users to read their department data',
+    subject: 'user',
+    subjectConditions: [{
+      attribute: 'department',
+      operator: 'equals',
+      value: 'IT'
+    }],
+    resource: {
+      modelName: 'Student',
+      resourceConditions: [{
+        attribute: 'departmentId',
+        operator: 'same_as_user',
+        referenceUserAttribute: 'departmentId'
+      }]
+    },
+    actions: ['read'],
+    effect: 'allow'
+  })
+});
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h4>cURL Example</h4>
+                                            <div class="code-block response-example">
+# Get all attributes
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     http://localhost:5000/api/abac/attributes
+
+# Create a new attribute
+curl -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "project_role",
+       "displayName": "Project Role",
+       "dataType": "string",
+       "category": "user",
+       "possibleValues": [
+         {"value": "manager", "label": "Manager"},
+         {"value": "developer", "label": "Developer"}
+       ]
+     }' \
+     http://localhost:5000/api/abac/attributes
+
+# Test policy evaluation
+curl -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "userId": "USER_ID",
+       "resource": {
+         "modelName": "Student",
+         "_id": "STUDENT_ID",
+         "departmentId": "DEPT_ID"
+       },
+       "action": "read"
+     }' \
+     http://localhost:5000/api/abac/policies/test
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Error Handling Section -->
+                        <section id="error-handling" class="mb-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Error Handling</h3>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    <h4>HTTP Status Codes</h4>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Status Code</th>
+                                                    <th>Description</th>
+                                                    <th>Common Causes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><span class="badge bg-success">200</span></td>
+                                                    <td>Success</td>
+                                                    <td>Request completed successfully</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-info">201</span></td>
+                                                    <td>Created</td>
+                                                    <td>Resource created successfully</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-warning">400</span></td>
+                                                    <td>Bad Request</td>
+                                                    <td>Invalid request body, missing required fields</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-warning">401</span></td>
+                                                    <td>Unauthorized</td>
+                                                    <td>Missing or invalid authentication token</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-warning">403</span></td>
+                                                    <td>Forbidden</td>
+                                                    <td>Insufficient permissions for the requested action</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-warning">404</span></td>
+                                                    <td>Not Found</td>
+                                                    <td>Resource does not exist</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="badge bg-danger">500</span></td>
+                                                    <td>Internal Server Error</td>
+                                                    <td>Server-side error, check logs</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <h4>Error Response Format</h4>
+                                    <div class="code-block">
+{
+  "message": "Validation error",
+  "error": "Detailed error description",
+  "errors": [
+    {
+      "field": "name",
+      "message": "Name is required"
+    }
+  ]
+}
+                                    </div>
+
+                                    <div class="alert alert-info">
+                                        <h4 class="alert-title">Tips for Debugging</h4>
+                                        <ul class="mb-0">
+                                            <li>Check server logs for detailed error information</li>
+                                            <li>Verify authentication token is valid and not expired</li>
+                                            <li>Ensure user has required permissions (abac.read, abac.manage)</li>
+                                            <li>Validate request body structure matches expected format</li>
+                                            <li>Check MongoDB connection and database availability</li>
+                                        </ul>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabler JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    
+    <script>
+        // Simple table of contents scroll spy
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.toc-link');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.scrollY >= (sectionTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
