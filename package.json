@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "server": "nodemon server/index.js",
     "seed": "node server/utils/seedData.js",
-    "menu": "node server/scripts/menuManager.js"
+    "menu": "node server/scripts/menuManager.js",
+    "model": "node server/scripts/modelManager.js"
 
   },
   "dependencies": {

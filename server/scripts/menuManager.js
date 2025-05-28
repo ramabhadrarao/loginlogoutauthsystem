@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// server/scripts/menuManager.js - CLI script for managing menu items
+// server/scripts/menuManager.js - CLI script for managing menu items (Updated with Academic Structure)
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -9,6 +9,9 @@ import {
   seedAllBaseMenuItems,
   seedAdministrationMenu,
   seedAllMenuItems,
+  seedAcademicMenuItems,
+  seedCoreMenuItems,
+  seedInstitutionalMenuItems,
   checkMenuItemExists,
   getAllMenuItems,
   getMenuHierarchy,
@@ -69,10 +72,38 @@ const commands = {
       return;
     }
     
+    // Group by categories
+    const categories = {
+      core: [],
+      institutional: [],
+      academic: [],
+      admin: [],
+      other: []
+    };
+    
     menuItems.forEach(item => {
       const parentInfo = item.parentId ? ` (child of ${item.parentId})` : '';
       const statusIcon = item.isActive ? '✅' : '❌';
-      console.log(`${statusIcon} ${item.name} -> ${item.route}${parentInfo}`);
+      const itemStr = `${statusIcon} ${item.name} -> ${item.route}${parentInfo}`;
+      
+      if (item.parentId) {
+        categories.admin.push(itemStr);
+      } else if (['/dashboard', '/users', '/attachments', '/settings'].includes(item.route)) {
+        categories.core.push(itemStr);
+      } else if (['/colleges', '/departments'].includes(item.route)) {
+        categories.institutional.push(itemStr);
+      } else if (['/programs', '/branches', '/academic-years', '/regulations', '/semesters', '/batches'].includes(item.route)) {
+        categories.academic.push(itemStr);
+      } else {
+        categories.other.push(itemStr);
+      }
+    });
+    
+    Object.entries(categories).forEach(([category, items]) => {
+      if (items.length > 0) {
+        console.log(`\n${category.toUpperCase()}:`);
+        items.forEach(item => console.log(`  ${item}`));
+      }
     });
   },
 
@@ -109,6 +140,7 @@ const commands = {
     console.log(`Inactive: ${stats.inactive}`);
     console.log(`Root Level: ${stats.rootLevel}`);
     console.log(`Sub-menu Items: ${stats.withParent}`);
+    console.log(`Academic Structure Items: ${stats.academic}`);
   },
 
   async validate() {
@@ -133,6 +165,15 @@ const commands = {
         case 'base':
           await seedAllBaseMenuItems();
           break;
+        case 'core':
+          await seedCoreMenuItems();
+          break;
+        case 'institutional':
+          await seedInstitutionalMenuItems();
+          break;
+        case 'academic':
+          await seedAcademicMenuItems();
+          break;
         case 'admin':
           await seedAdministrationMenu();
           break;
@@ -144,9 +185,14 @@ const commands = {
             console.log('❌ Admin submenu items need a parent ID. Use "admin" to seed all admin items.');
           } else {
             console.log(`❌ Unknown menu type: ${type}`);
-            console.log('Available types: all, base, admin, or individual items:');
-            console.log('Base items:', AVAILABLE_MENU_ITEMS.base.join(', '));
-            console.log('Admin sub-items:', AVAILABLE_MENU_ITEMS.adminSub.join(', '));
+            console.log('Available types:');
+            console.log('  - all: Seed all menu items');
+            console.log('  - base: Seed all base menu items');
+            console.log('  - core: Seed core items (dashboard, users, files, settings, admin)');
+            console.log('  - institutional: Seed institutional items (colleges, departments)');
+            console.log('  - academic: Seed academic structure items (programs, branches, etc.)');
+            console.log('  - admin: Seed administration menu with sub-items');
+            console.log('  - Individual items:', AVAILABLE_MENU_ITEMS.base.join(', '));
           }
           break;
       }
@@ -253,16 +299,60 @@ const commands = {
     }
   },
 
+  async missing() {
+    console.log('🔍 Checking for missing academic structure menu items...');
+    
+    const requiredAcademicItems = [
+      { route: '/programs', name: 'Programs' },
+      { route: '/branches', name: 'Branches' },
+      { route: '/academic-years', name: 'Academic Years' },
+      { route: '/regulations', name: 'Regulations' },
+      { route: '/semesters', name: 'Semesters' },
+      { route: '/batches', name: 'Batches' }
+    ];
+    
+    const missing = [];
+    
+    for (const item of requiredAcademicItems) {
+      const exists = await checkMenuItemExists(item.route);
+      if (!exists) {
+        missing.push(item);
+      }
+    }
+    
+    if (missing.length === 0) {
+      console.log('✅ All academic structure menu items are present');
+    } else {
+      console.log(`❌ Missing ${missing.length} academic menu items:`);
+      missing.forEach(item => {
+        console.log(`   - ${item.name} (${item.route})`);
+      });
+      console.log('\nTo add missing items, run:');
+      console.log('   npm run menu seed academic');
+    }
+  },
+
   help() {
-    console.log('🔧 Menu Management CLI');
+    console.log('🔧 Menu Management CLI - Academic Structure Enhanced');
     console.log('');
     console.log('Available commands:');
     console.log('  check <route>         - Check if menu item exists');
-    console.log('  list                  - List all menu items');
+    console.log('  list                  - List all menu items (grouped by category)');
     console.log('  hierarchy             - Show menu hierarchy');
     console.log('  stats                 - Show menu statistics');
     console.log('  validate              - Validate menu system');
-    console.log('  seed [type]           - Seed menu items (all, base, admin, or specific item)');
+    console.log('  missing               - Check for missing academic structure items');
+    console.log('');
+    console.log('Seeding commands:');
+    console.log('  seed all              - Seed all menu items');
+    console.log('  seed base             - Seed all base menu items');
+    console.log('  seed core             - Seed core items (dashboard, users, files, settings)');
+    console.log('  seed institutional    - Seed institutional items (colleges, departments)');
+    console.log('  seed academic         - Seed academic structure items');
+    console.log('  seed admin            - Seed administration menu');
+    console.log('  seed <item>           - Seed specific menu item');
+    console.log('');
+    console.log('Management commands:');
     console.log('  enable <route>        - Enable menu item');
     console.log('  disable <route>       - Disable menu item');
     console.log('  toggle <route>        - Toggle menu item status');
@@ -272,12 +362,15 @@ const commands = {
     console.log('  help                  - Show this help');
     console.log('');
     console.log('Examples:');
-    console.log('  npm run menu check /dashboard');
-    console.log('  npm run menu seed dashboard');
-    console.log('  npm run menu seed admin');
+    console.log('  npm run menu missing');
+    console.log('  npm run menu seed academic');
+    console.log('  npm run menu check /programs');
     console.log('  npm run menu list');
     console.log('  npm run menu enable /admin/abac');
     console.log('  npm run menu update /dashboard name "Main Dashboard"');
+    console.log('');
+    console.log('Academic Structure Items:');
+    console.log('  programs, branches, academicYears, regulations, semesters, batches');
   }
 };
 

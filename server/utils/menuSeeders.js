@@ -1,7 +1,7 @@
-// server/utils/menuSeeders.js - Individual menu item seeder functions
+// server/utils/menuSeeders.js - Updated with complete academic structure
 import MenuItem from '../models/MenuItem.js';
 
-// Base menu items (main navigation)
+// Base menu items (main navigation) - UPDATED WITH ACADEMIC STRUCTURE
 export const BASE_MENU_ITEMS = {
   dashboard: {
     name: 'Dashboard',
@@ -35,12 +35,60 @@ export const BASE_MENU_ITEMS = {
     sortOrder: 4,
     isActive: true
   },
+  programs: {
+    name: 'Programs',
+    route: '/programs',
+    icon: 'GraduationCap',
+    requiredPermission: 'programs.read',
+    sortOrder: 5,
+    isActive: true
+  },
+  branches: {
+    name: 'Branches',
+    route: '/branches',
+    icon: 'GitBranch',
+    requiredPermission: 'branches.read',
+    sortOrder: 6,
+    isActive: true
+  },
+  academicYears: {
+    name: 'Academic Years',
+    route: '/academic-years',
+    icon: 'Calendar',
+    requiredPermission: 'academic_years.read',
+    sortOrder: 7,
+    isActive: true
+  },
+  regulations: {
+    name: 'Regulations',
+    route: '/regulations',
+    icon: 'FileText',
+    requiredPermission: 'regulations.read',
+    sortOrder: 8,
+    isActive: true
+  },
+  semesters: {
+    name: 'Semesters',
+    route: '/semesters',
+    icon: 'Clock',
+    requiredPermission: 'semesters.read',
+    sortOrder: 9,
+    isActive: true
+  },
+  batches: {
+    name: 'Batches',
+    route: '/batches',
+    icon: 'Users2',
+    requiredPermission: 'batches.read',
+    sortOrder: 10,
+    isActive: true
+  },
   files: {
     name: 'Files',
     route: '/attachments',
     icon: 'File',
     requiredPermission: 'attachments.read',
-    sortOrder: 5,
+    sortOrder: 11,
     isActive: true
   },
   settings: {
@@ -48,7 +96,7 @@ export const BASE_MENU_ITEMS = {
     route: '/settings',
     icon: 'Settings',
     requiredPermission: 'settings.read',
-    sortOrder: 6,
+    sortOrder: 12,
     isActive: true
   },
   administration: {
@@ -56,7 +104,7 @@ export const BASE_MENU_ITEMS = {
     route: '/admin',
     icon: 'Shield',
     requiredPermission: 'admin.access',
-    sortOrder: 7,
+    sortOrder: 13,
     isActive: true
   }
 };
@@ -97,10 +145,11 @@ export const ADMIN_SUB_MENU_ITEMS = {
   }
 };
 
-// Available menu items for CLI help
+// Available menu items for CLI help - UPDATED
 export const AVAILABLE_MENU_ITEMS = {
   base: Object.keys(BASE_MENU_ITEMS),
-  adminSub: Object.keys(ADMIN_SUB_MENU_ITEMS)
+  adminSub: Object.keys(ADMIN_SUB_MENU_ITEMS),
+  academic: ['programs', 'branches', 'academicYears', 'regulations', 'semesters', 'batches']
 };
 
 /**
@@ -123,7 +172,7 @@ export const seedMenuItem = async (itemKey) => {
   try {
     const itemData = BASE_MENU_ITEMS[itemKey];
     if (!itemData) {
-      throw new Error(`Unknown menu item: ${itemKey}`);
+      throw new Error(`Unknown menu item: ${itemKey}. Available items: ${Object.keys(BASE_MENU_ITEMS).join(', ')}`);
     }
 
     const exists = await checkMenuItemExists(itemData.route);
@@ -141,13 +190,28 @@ export const seedMenuItem = async (itemKey) => {
 };
 
 /**
+ * Seed academic structure menu items only
+ */
+export const seedAcademicMenuItems = async () => {
+  console.log('🎓 Seeding academic structure menu items...');
+  
+  const academicItems = ['programs', 'branches', 'academicYears', 'regulations', 'semesters', 'batches'];
+  
+  for (const itemKey of academicItems) {
+    await seedMenuItem(itemKey);
+  }
+  
+  console.log('✅ Academic structure menu items seeding completed');
+};
+
+/**
  * Seed an admin sub-menu item (requires parent)
  */
 export const seedAdminSubMenuItem = async (itemKey, parentId) => {
   try {
     const itemData = ADMIN_SUB_MENU_ITEMS[itemKey];
     if (!itemData) {
-      throw new Error(`Unknown admin sub-menu item: ${itemKey}`);
+      throw new Error(`Unknown admin sub-menu item: ${itemKey}. Available items: ${Object.keys(ADMIN_SUB_MENU_ITEMS).join(', ')}`);
     }
 
     const exists = await checkMenuItemExists(itemData.route);
@@ -171,7 +235,7 @@ export const seedAdminSubMenuItem = async (itemKey, parentId) => {
  * Seed all base menu items (no admin sub-menus)
  */
 export const seedAllBaseMenuItems = async () => {
-  console.log('🌱 Seeding base menu items...');
+  console.log('🌱 Seeding all base menu items...');
   
   for (const itemKey of Object.keys(BASE_MENU_ITEMS)) {
     await seedMenuItem(itemKey);
@@ -181,10 +245,40 @@ export const seedAllBaseMenuItems = async () => {
 };
 
 /**
+ * Seed core menu items (non-academic)
+ */
+export const seedCoreMenuItems = async () => {
+  console.log('🔧 Seeding core menu items...');
+  
+  const coreItems = ['dashboard', 'users', 'files', 'settings', 'administration'];
+  
+  for (const itemKey of coreItems) {
+    await seedMenuItem(itemKey);
+  }
+  
+  console.log('✅ Core menu items seeding completed');
+};
+
+/**
+ * Seed institutional menu items
+ */
+export const seedInstitutionalMenuItems = async () => {
+  console.log('🏫 Seeding institutional menu items...');
+  
+  const institutionalItems = ['colleges', 'departments'];
+  
+  for (const itemKey of institutionalItems) {
+    await seedMenuItem(itemKey);
+  }
+  
+  console.log('✅ Institutional menu items seeding completed');
+};
+
+/**
  * Seed administration menu with all sub-menus
  */
 export const seedAdministrationMenu = async () => {
-  console.log('🌱 Seeding administration menu...');
+  console.log('🔐 Seeding administration menu...');
   
   // First ensure the administration parent exists
   let adminMenu = await MenuItem.findOne({ route: '/admin' });
@@ -287,7 +381,10 @@ export const getMenuStats = async () => {
       active: allMenuItems.filter(item => item.isActive).length,
       inactive: allMenuItems.filter(item => !item.isActive).length,
       rootLevel: allMenuItems.filter(item => !item.parentId).length,
-      withParent: allMenuItems.filter(item => item.parentId).length
+      withParent: allMenuItems.filter(item => item.parentId).length,
+      academic: allMenuItems.filter(item => 
+        ['/programs', '/branches', '/academic-years', '/regulations', '/semesters', '/batches'].includes(item.route)
+      ).length
     };
     
     return stats;
@@ -326,6 +423,14 @@ export const validateMenuSystem = async () => {
     const itemsWithoutPermission = allMenuItems.filter(item => !item.requiredPermission);
     if (itemsWithoutPermission.length > 0) {
       issues.push(`Menu items without required permissions: ${itemsWithoutPermission.map(item => item.name).join(', ')}`);
+    }
+    
+    // Check for missing academic structure items
+    const academicRoutes = ['/programs', '/branches', '/academic-years', '/regulations', '/semesters', '/batches'];
+    const existingRoutes = routes;
+    const missingAcademic = academicRoutes.filter(route => !existingRoutes.includes(route));
+    if (missingAcademic.length > 0) {
+      issues.push(`Missing academic menu items: ${missingAcademic.join(', ')}`);
     }
     
     return {
@@ -434,6 +539,9 @@ export const resetMenuSystem = async () => {
 
 export default {
   seedMenuItem,
+  seedAcademicMenuItems,
+  seedCoreMenuItems,
+  seedInstitutionalMenuItems,
   seedAdminSubMenuItem,
   seedAllBaseMenuItems,
   seedAdministrationMenu,
