@@ -10,6 +10,9 @@ import ModelsManagement from './pages/admin/ModelsManagement';
 import AuditLog from './pages/admin/AuditLog';
 import UsersList from './pages/users/UsersList';
 import CollegesList from './pages/colleges/CollegesList';
+import DepartmentsList from './pages/departments/DepartmentsList'; // ADD THIS
+
+
 import AttachmentsList from './pages/attachments/AttachmentsList';
 import SystemSettings from './pages/settings/SystemSettings';
 
@@ -87,6 +90,11 @@ function App() {
             
             {/* Resource routes */}
             <Route path="colleges" element={<ProtectedRoute requiredPermission="colleges.read"><CollegesList /></ProtectedRoute>} />
+            <Route path="departments" element={<ProtectedRoute requiredPermission="departments.read"><DepartmentsList /></ProtectedRoute>} />
+
+
+
+
             <Route path="attachments" element={<ProtectedRoute requiredPermission="attachments.read"><AttachmentsList /></ProtectedRoute>} />
             <Route path="settings" element={<ProtectedRoute requiredPermission="settings.read"><SystemSettings /></ProtectedRoute>} />
           </Route>

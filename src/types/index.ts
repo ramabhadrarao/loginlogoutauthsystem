@@ -59,10 +59,32 @@ export interface College {
   dateCreated: string;
   dateUpdated: string;
 }
+export interface Department {
+  _id: string;
+  name: string;
+  code: string;
+  collegeId: string;
+  hodId?: string;
+  logo?: string;
+  description?: string;
+  email?: string;
+  phone?: string;
+  establishedDate?: string;
+  status: 'active' | 'inactive';
+  dateCreated: string;
+  dateUpdated: string;
+  
+  // Populated fields
+  collegeName?: string;
+  collegeCode?: string;
+  hodName?: string;
+  hodEmail?: string;
+}
 
 export interface Attachment {
   _id: string;
-  uploaderUserId?: string;
+  uploaderUserId: string;
+  uploaderName?: string; // Add this if it's populated from the backend
   fileName: string;
   originalFileName: string;
   filePath: string;
@@ -70,6 +92,7 @@ export interface Attachment {
   fileSizeBytes: number;
   storageLocation: string;
   createdAt: string;
+  updatedAt?: string; // Add this if the backend includes it
 }
 
 export interface SystemSetting {

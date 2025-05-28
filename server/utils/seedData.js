@@ -5,7 +5,144 @@ import Permission from '../models/Permission.js';
 import College from '../models/College.js';
 import SystemSetting from '../models/SystemSetting.js';
 import MenuItem from '../models/MenuItem.js';
-
+// Add this to your existing settings array in the seedDatabase function
+const uploadSettings = [
+  // File Upload Limits
+  {
+    settingKey: 'upload.max_file_size_mb',
+    settingValue: '10',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Maximum file size in MB for uploads'
+  },
+  {
+    settingKey: 'upload.max_files_per_upload',
+    settingValue: '1',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Maximum number of files per upload request'
+  },
+  
+  // Allowed MIME Types
+  {
+    settingKey: 'upload.allowed_image_types',
+    settingValue: 'image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed image MIME types (comma-separated)'
+  },
+  {
+    settingKey: 'upload.allowed_document_types',
+    settingValue: 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed document MIME types (comma-separated)'
+  },
+  {
+    settingKey: 'upload.allowed_text_types',
+    settingValue: 'text/plain',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed text MIME types (comma-separated)'
+  },
+  {
+    settingKey: 'upload.allowed_archive_types',
+    settingValue: 'application/zip,application/x-rar-compressed',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed archive MIME types (comma-separated)'
+  },
+  
+  // Allowed File Extensions
+  {
+    settingKey: 'upload.allowed_image_extensions',
+    settingValue: 'jpg,jpeg,png,gif,webp,svg',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed image file extensions (comma-separated, without dots)'
+  },
+  {
+    settingKey: 'upload.allowed_document_extensions',
+    settingValue: 'pdf,doc,docx,xls,xlsx',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed document file extensions (comma-separated, without dots)'
+  },
+  {
+    settingKey: 'upload.allowed_text_extensions',
+    settingValue: 'txt',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed text file extensions (comma-separated, without dots)'
+  },
+  {
+    settingKey: 'upload.allowed_archive_extensions',
+    settingValue: 'zip,rar',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Allowed archive file extensions (comma-separated, without dots)'
+  },
+  
+  // Upload Behavior Settings
+  {
+    settingKey: 'upload.filename_method',
+    settingValue: 'timestamp16bit',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Filename generation method: timestamp16bit, pure16bit, safe16bit, prefixed16bit, dateBased16bit'
+  },
+  {
+    settingKey: 'upload.enable_images',
+    settingValue: 'true',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Enable image file uploads'
+  },
+  {
+    settingKey: 'upload.enable_documents',
+    settingValue: 'true',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Enable document file uploads'
+  },
+  {
+    settingKey: 'upload.enable_text',
+    settingValue: 'true',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Enable text file uploads'
+  },
+  {
+    settingKey: 'upload.enable_archives',
+    settingValue: 'true',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Enable archive file uploads'
+  },
+  
+  // Additional Upload Settings
+  {
+    settingKey: 'upload.uploads_directory',
+    settingValue: 'uploads',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Directory for storing uploaded files'
+  },
+  {
+    settingKey: 'upload.require_authentication',
+    settingValue: 'true',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Require user authentication for file uploads'
+  },
+  {
+    settingKey: 'upload.log_all_uploads',
+    settingValue: 'true',
+    settingGroup: 'upload',
+    isPublic: false,
+    description: 'Log all file upload attempts for auditing'
+  }
+];
 export const seedDatabase = async () => {
   try {
     // Check if data already exists
@@ -208,7 +345,10 @@ export const seedDatabase = async () => {
         settingGroup: 'security',
         isPublic: false,
         description: 'Number of minutes before user sessions timeout'
-      }
+      },
+       // Add upload settings
+      ...uploadSettings
+      
     ];
 
     await SystemSetting.insertMany(settings);

@@ -1,4 +1,4 @@
-// src/components/layout/Sidebar.tsx
+// src/components/layout/Sidebar.tsx - Fixed version
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../utils/auth';
@@ -90,9 +90,23 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         _id: (itemId++).toString(),
         name: 'Colleges',
         route: '/colleges',
-        icon: 'Building2',
+        icon: 'Building',
         requiredPermission: 'colleges.read',
         sortOrder: 3,
+        isActive: true
+      });
+    }
+
+    // Departments - show if user has any department permissions
+    const departmentPerms = getEffectivePermissions('departments');
+    if (departmentPerms.canRead) {
+      menuItems.push({
+        _id: (itemId++).toString(),
+        name: 'Departments',
+        route: '/departments',
+        icon: 'Building2',
+        requiredPermission: 'departments.read',
+        sortOrder: 4,
         isActive: true
       });
     }
@@ -106,7 +120,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         route: '/attachments',
         icon: 'File',
         requiredPermission: 'attachments.read',
-        sortOrder: 4,
+        sortOrder: 5,
         isActive: true
       });
     }
@@ -120,7 +134,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         route: '/settings',
         icon: 'Settings',
         requiredPermission: 'settings.read',
-        sortOrder: 5,
+        sortOrder: 6,
         isActive: true
       });
     }
@@ -188,7 +202,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           icon: 'Shield',
           route: '/admin',
           requiredPermission: 'admin.access',
-          sortOrder: 6,
+          sortOrder: 7,
           isActive: true,
           children: adminChildren
         });

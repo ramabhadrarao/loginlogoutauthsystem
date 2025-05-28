@@ -1,5 +1,6 @@
 // src/utils/api.ts
 import { LoginCredentials, AuthResponse, User, Model, Permission, College, Attachment, SystemSetting, AuditLogEntry } from '../types';
+import { Department } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -132,6 +133,41 @@ export const collegesApi = {
 
   delete: (id: string): Promise<{ message: string }> => 
     fetchWithAuth(`/colleges/${id}`, { method: 'DELETE' }),
+};
+
+
+// Department API call service  services
+export const departmentsApi = {
+  getAll: (params?: { search?: string; status?: string; collegeId?: string }): Promise<Department[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.status) searchParams.append('status', params.status);
+    if (params?.collegeId) searchParams.append('collegeId', params.collegeId);
+    
+    const queryString = searchParams.toString();
+    return fetchWithAuth(`/departments${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getById: (id: string): Promise<Department> => 
+    fetchWithAuth(`/departments/${id}`),
+
+  create: (departmentData: Partial<Department>): Promise<Department> => 
+    fetchWithAuth('/departments', {
+      method: 'POST',
+      body: JSON.stringify(departmentData),
+    }),
+
+  update: (id: string, departmentData: Partial<Department>): Promise<Department> => 
+    fetchWithAuth(`/departments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(departmentData),
+    }),
+
+  delete: (id: string): Promise<{ message: string }> => 
+    fetchWithAuth(`/departments/${id}`, { method: 'DELETE' }),
+
+  getByCollege: (collegeId: string): Promise<Department[]> => 
+    fetchWithAuth(`/departments/college/${collegeId}`),
 };
 
 // Attachments API calls

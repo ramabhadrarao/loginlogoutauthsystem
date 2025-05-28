@@ -2,9 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Users, Building, File, Settings, ArrowUpRight, Shield, Lock, Database, History, Plus, Eye, RefreshCw } from 'lucide-react';
+import Button from '../components/ui/Button'; // ← ADD THIS IMPORT
+
+import { Users, Building,Building2, File, Settings, ArrowUpRight, Shield, Lock, Database, History, Plus, Eye, RefreshCw } from 'lucide-react';
 import { useAuth } from '../utils/auth';
 import { usersApi, collegesApi, attachmentsApi, settingsApi } from '../utils/api';
+import { departmentsApi } from '../utils/api';
 
 interface StatCardProps {
   title: string;
@@ -156,6 +159,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     users: 0,
     colleges: 0,
+    departments: 0, // ADD THIS
+
     attachments: 0,
     settings: 0
   });
@@ -165,6 +170,8 @@ const Dashboard = () => {
   // Get permissions for different models
   const userPerms = getEffectivePermissions('users');
   const collegePerms = getEffectivePermissions('colleges');
+  const departmentPerms = getEffectivePermissions('departments'); // ADD THIS
+
   const attachmentPerms = getEffectivePermissions('attachments');
   const settingsPerms = getEffectivePermissions('settings');
 
@@ -191,6 +198,14 @@ const Dashboard = () => {
           );
         }
         
+        if (departmentPerms.canRead) {
+            promises.push(
+              departmentsApi.getAll().then(data => { results.departments = data.length; }).catch(() => { results.departments = 0; })
+            );
+          }
+
+
+
         if (attachmentPerms.canRead) {
           promises.push(
             attachmentsApi.getAll().then(data => { results.attachments = data.length; }).catch(() => { results.attachments = 0; })
@@ -214,7 +229,7 @@ const Dashboard = () => {
     };
 
     loadStats();
-  }, [userPerms.canRead, collegePerms.canRead, attachmentPerms.canRead, settingsPerms.canRead]);
+  }, [userPerms.canRead, collegePerms.canRead, departmentPerms.canRead,attachmentPerms.canRead, settingsPerms.canRead]);
 
   const refreshStats = () => {
     setLoading(true);
@@ -303,6 +318,18 @@ const Dashboard = () => {
             loading={loading}
           />
         )}
+
+        {departmentPerms.canRead && (
+        <StatCard
+          title="Departments"
+          value={stats.departments}
+          icon={<Building2 className="h-6 w-6" />}
+          description="Academic departments"
+          linkTo="/departments"
+          permissions={departmentPerms}
+          loading={loading}
+        />
+      )}
         
         {attachmentPerms.canRead && (
           <StatCard
@@ -381,7 +408,14 @@ const Dashboard = () => {
             requiredPermission="colleges.create"
             color="green"
           />
-          
+          <QuickAction
+            title="Add Department"
+            description="Create new department"
+            icon={<Building2 className="h-5 w-5" />}
+            to="/departments"
+            requiredPermission="departments.create"
+            color="blue"
+          />
           <QuickAction
             title="Upload Files"
             description="Add new attachments"
@@ -453,6 +487,21 @@ const Dashboard = () => {
                   </p>
                 </div>
               )}
+
+              {departmentPerms.canRead && (
+              <div className="text-center p-4 rounded-lg border border-gray-200">
+                <Building2 className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+                <h4 className="font-medium text-gray-900">Departments</h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  {[
+                    departmentPerms.canRead && 'Read',
+                    departmentPerms.canCreate && 'Create',
+                    departmentPerms.canUpdate && 'Update',
+                    departmentPerms.canDelete && 'Delete'
+                  ].filter(Boolean).join(', ')}
+                </p>
+              </div>
+            )}
               
               {attachmentPerms.canRead && (
                 <div className="text-center p-4 rounded-lg border border-gray-200">
