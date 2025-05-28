@@ -12,7 +12,13 @@ import UsersList from './pages/users/UsersList';
 import CollegesList from './pages/colleges/CollegesList';
 import DepartmentsList from './pages/departments/DepartmentsList'; // ADD THIS
 import ABACManagement from './pages/admin/ABACManagement'; // ADD THIS IMPORT
-
+// Academic imports
+import AcademicYearsList from './pages/academic/AcademicYearsList';
+import ProgramsList from './pages/academic/ProgramsList';
+import BranchesList from './pages/academic/BranchesList';
+import RegulationsList from './pages/academic/RegulationsList';
+import BatchesList from './pages/academic/BatchesList';
+import SemestersList from './pages/academic/SemestersList';
 
 import AttachmentsList from './pages/attachments/AttachmentsList';
 import SystemSettings from './pages/settings/SystemSettings';
@@ -94,6 +100,14 @@ function App() {
             <Route path="colleges" element={<ProtectedRoute requiredPermission="colleges.read"><CollegesList /></ProtectedRoute>} />
             <Route path="departments" element={<ProtectedRoute requiredPermission="departments.read"><DepartmentsList /></ProtectedRoute>} />
 
+
+            {/* Academic routes */}
+            <Route path="academic/years" element={<ProtectedRoute requiredPermission="academic_years.read"><AcademicYearsList /></ProtectedRoute>} />
+            <Route path="academic/programs" element={<ProtectedRoute requiredPermission="programs.read"><ProgramsList /></ProtectedRoute>} />
+            <Route path="academic/branches" element={<ProtectedRoute requiredPermission="branches.read"><BranchesList /></ProtectedRoute>} />
+            <Route path="academic/regulations" element={<ProtectedRoute requiredPermission="regulations.read"><RegulationsList /></ProtectedRoute>} />
+            <Route path="academic/batches" element={<ProtectedRoute requiredPermission="batches.read"><BatchesList /></ProtectedRoute>} />
+            <Route path="academic/semesters" element={<ProtectedRoute requiredPermission="semesters.read"><SemestersList /></ProtectedRoute>} />
 
 
 
