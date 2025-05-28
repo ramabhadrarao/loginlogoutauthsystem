@@ -1,3 +1,4 @@
+// src/utils/auth.tsx
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { authApi } from './api';
@@ -9,6 +10,13 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hasPermission: (permissionKey: string) => boolean;
+  hasAnyPermission: (permissionKeys: string[]) => boolean;
+  getEffectivePermissions: (modelName: string) => {
+    canRead: boolean;
+    canCreate: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+  };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,13 +68,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Smart permission checking with hierarchy logic
   const hasPermission = (permissionKey: string) => {
     if (!user) return false;
     if (user.isSuperAdmin) return true;
     
-    return user.permissions.some(
+    // Direct permission check
+    const directPermission = user.permissions?.some(
       permission => permission.permissionKey === permissionKey
     );
+    
+    if (directPermission) return true;
+    
+    // Smart permission logic: if you have write/update/delete, you automatically have read
+    if (permissionKey.endsWith('.read')) {
+      const modelName = permissionKey.replace('.read', '');
+      const hasWrite = user.permissions?.some(p => p.permissionKey === `${modelName}.create`);
+      const hasUpdate = user.permissions?.some(p => p.permissionKey === `${modelName}.update`);
+      const hasDelete = user.permissions?.some(p => p.permissionKey === `${modelName}.delete`);
+      
+      return hasWrite || hasUpdate || hasDelete;
+    }
+    
+    return false;
+  };
+
+  // Check if user has any of the provided permissions
+  const hasAnyPermission = (permissionKeys: string[]) => {
+    if (!user) return false;
+    if (user.isSuperAdmin) return true;
+    
+    return permissionKeys.some(key => hasPermission(key));
+  };
+
+  // Get effective permissions for a model (what the user can actually do)
+  const getEffectivePermissions = (modelName: string) => {
+    if (!user) {
+      return { canRead: false, canCreate: false, canUpdate: false, canDelete: false };
+    }
+    
+    if (user.isSuperAdmin) {
+      return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
+    }
+    
+    const canCreate = hasPermission(`${modelName}.create`);
+    const canUpdate = hasPermission(`${modelName}.update`);
+    const canDelete = hasPermission(`${modelName}.delete`);
+    const canRead = hasPermission(`${modelName}.read`) || canCreate || canUpdate || canDelete;
+    
+    return { canRead, canCreate, canUpdate, canDelete };
   };
 
   return (
@@ -77,6 +127,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login,
       logout,
       hasPermission,
+      hasAnyPermission,
+      getEffectivePermissions,
     }}>
       {children}
     </AuthContext.Provider>

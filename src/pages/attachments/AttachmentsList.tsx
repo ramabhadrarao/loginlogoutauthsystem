@@ -25,7 +25,7 @@ const getFileIcon = (mimeType: string) => {
 };
 
 const AttachmentsList = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ const AttachmentsList = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canCreateAttachment = hasPermission('attachments.create');
-  const canDeleteAttachment = hasPermission('attachments.delete');
+  const hasDeletePermission = hasPermission('attachments.delete');
 
   // Load attachments from API
   useEffect(() => {
@@ -81,7 +81,16 @@ const AttachmentsList = () => {
     }
   };
 
-  const handleDelete = async (id: string, fileName: string) => {
+  const handleDelete = async (id: string, fileName: string, uploaderUserId: string) => {
+    // Enhanced permission check
+    const isOwner = uploaderUserId === user?._id;
+    const canDelete = user?.isSuperAdmin || hasDeletePermission || isOwner;
+    
+    if (!canDelete) {
+      alert('You do not have permission to delete this file.');
+      return;
+    }
+
     if (!window.confirm(`Are you sure you want to delete ${fileName}?`)) {
       return;
     }
@@ -94,14 +103,42 @@ const AttachmentsList = () => {
     }
   };
 
-  const handleDownload = (id: string, fileName: string) => {
-    const downloadUrl = attachmentsApi.download(id);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (id: string, originalFileName: string) => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/attachments/${id}/download`, {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = originalFileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Failed to download file: ' + err.message);
+    }
+  };
+
+  // Check if user can delete a specific attachment
+  const canUserDeleteAttachment = (attachment: Attachment) => {
+    if (user?.isSuperAdmin) return true;
+    if (hasDeletePermission) return true;
+    return attachment.uploaderUserId === user?._id; // Owner can delete their own files
   };
 
   if (loading) {
@@ -280,13 +317,22 @@ const AttachmentsList = () => {
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {attachment.mimeType}
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                          {attachment.mimeType.split('/')[1]?.toUpperCase() || 'FILE'}
+                        </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {formatFileSize(attachment.fileSizeBytes)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {attachment.uploaderName || 'Unknown User'}
+                        <div className="flex items-center">
+                          {attachment.uploaderName || 'Unknown User'}
+                          {attachment.uploaderUserId === user?._id && (
+                            <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                              You
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {new Date(attachment.createdAt).toLocaleDateString()}
@@ -303,13 +349,13 @@ const AttachmentsList = () => {
                           >
                             <span className="sr-only">Download</span>
                           </Button>
-                          {canDeleteAttachment && (
+                          {canUserDeleteAttachment(attachment) && (
                             <Button
                               variant="ghost"
                               size="sm"
                               className="text-red-600 hover:text-red-900"
                               icon={<Trash2 className="h-4 w-4" />}
-                              onClick={() => handleDelete(attachment._id, attachment.originalFileName)}
+                              onClick={() => handleDelete(attachment._id, attachment.originalFileName, attachment.uploaderUserId)}
                               title="Delete file"
                             >
                               <span className="sr-only">Delete</span>
