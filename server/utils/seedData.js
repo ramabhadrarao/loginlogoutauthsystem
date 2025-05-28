@@ -321,7 +321,7 @@ export const seedDatabase = async () => {
 
     // 4. Create Regular Demo User
     const demoPermissions = createdPermissions.filter(p => 
-      ['dashboard.read', 'colleges.read', 'departments.read', 'programs.read', 'branches.read', 'academic_years.read', 'attachments.read', 'settings.read'].includes(p.permissionKey)
+      ['dashboard.read', 'colleges.read', 'departments.read', 'programs.read', 'branches.read', 'academic_years.read', 'regulations.read', 'semesters.read', 'batches.read', 'attachments.read', 'settings.read'].includes(p.permissionKey)
     );
 
     const demoUser = new User({
@@ -602,11 +602,35 @@ export const seedDatabase = async () => {
         isActive: true
       },
       {
+        name: 'Regulations',
+        route: '/regulations',
+        icon: 'FileText',
+        requiredPermission: 'regulations.read',
+        sortOrder: 8,
+        isActive: true
+      },
+      {
+        name: 'Semesters',
+        route: '/semesters',
+        icon: 'Clock',
+        requiredPermission: 'semesters.read',
+        sortOrder: 9,
+        isActive: true
+      },
+      {
+        name: 'Batches',
+        route: '/batches',
+        icon: 'Users',
+        requiredPermission: 'batches.read',
+        sortOrder: 10,
+        isActive: true
+      },
+      {
         name: 'Files',
         route: '/attachments',
         icon: 'File',
         requiredPermission: 'attachments.read',
-        sortOrder: 8,
+        sortOrder: 11,
         isActive: true
       },
       {
@@ -614,7 +638,7 @@ export const seedDatabase = async () => {
         route: '/settings',
         icon: 'Settings',
         requiredPermission: 'settings.read',
-        sortOrder: 9,
+        sortOrder: 12,
         isActive: true
       }
     ];
@@ -627,7 +651,7 @@ export const seedDatabase = async () => {
       route: '/admin',
       icon: 'Shield',
       requiredPermission: 'admin.access',
-      sortOrder: 10,
+      sortOrder: 13,
       isActive: true
     });
 

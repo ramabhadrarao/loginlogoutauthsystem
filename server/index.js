@@ -14,6 +14,9 @@ import departmentRoutes from './routes/departments.js';
 import programRoutes from './routes/programs.js';
 import branchRoutes from './routes/branches.js';
 import academicYearRoutes from './routes/academicYears.js';
+import regulationRoutes from './routes/regulations.js';
+import semesterRoutes from './routes/semesters.js';
+import batchRoutes from './routes/batches.js';
 import abacRoutes from './routes/abac.js';
 import attachmentRoutes from './routes/attachments.js';
 import settingsRoutes from './routes/settings.js';
@@ -65,6 +68,9 @@ app.use('/api/departments', verifyToken, departmentRoutes);
 app.use('/api/programs', verifyToken, programRoutes);
 app.use('/api/branches', verifyToken, branchRoutes);
 app.use('/api/academic-years', verifyToken, academicYearRoutes);
+app.use('/api/regulations', verifyToken, regulationRoutes);
+app.use('/api/semesters', verifyToken, semesterRoutes);
+app.use('/api/batches', verifyToken, batchRoutes);
 app.use('/api/attachments', verifyToken, attachmentRoutes);
 app.use('/api/settings', verifyToken, settingsRoutes);
 app.use('/api/admin', verifyToken, adminRoutes);
@@ -91,8 +97,8 @@ app.get('/health', (req, res) => {
     uploadsPath: join(__dirname, '../uploads'),
     routes: [
       'auth', 'users', 'colleges', 'departments', 'programs', 
-      'branches', 'academic-years', 'attachments', 'settings', 
-      'admin', 'abac', 'menu'
+      'branches', 'academic-years', 'regulations', 'semesters', 
+      'batches', 'attachments', 'settings', 'admin', 'abac', 'menu'
     ]
   });
 });
@@ -110,6 +116,9 @@ app.get('/api', (req, res) => {
       programs: '/api/programs',
       branches: '/api/branches',
       academicYears: '/api/academic-years',
+      regulations: '/api/regulations',
+      semesters: '/api/semesters',
+      batches: '/api/batches',
       attachments: '/api/attachments',
       settings: '/api/settings',
       admin: '/api/admin',
@@ -151,6 +160,9 @@ app.listen(PORT, () => {
   console.log('  - Programs: /api/programs');
   console.log('  - Branches: /api/branches');
   console.log('  - Academic Years: /api/academic-years');
+  console.log('  - Regulations: /api/regulations');
+  console.log('  - Semesters: /api/semesters');
+  console.log('  - Batches: /api/batches');
   console.log('  - Attachments: /api/attachments');
   console.log('  - Settings: /api/settings');
   console.log('  - Administration: /api/admin');
