@@ -1,4 +1,4 @@
-// src/utils/academicApi.ts
+// src/utils/academicApi.ts - Fixed version without double /api
 import { fetchWithAuth } from './api';
 
 // Academic Year interfaces
@@ -146,36 +146,36 @@ export interface Semester {
 // Academic Years API
 export const academicYearsApi = {
   getAll: (): Promise<AcademicYear[]> => 
-    fetchWithAuth('/api/academic-years'),
+    fetchWithAuth('/academic-years'),
 
   getCurrent: (): Promise<AcademicYear> => 
-    fetchWithAuth('/api/academic-years/current'),
+    fetchWithAuth('/academic-years/current'),
 
   getById: (id: string): Promise<AcademicYear> => 
-    fetchWithAuth(`/api/academic-years/${id}`),
+    fetchWithAuth(`/academic-years/${id}`),
 
   create: (data: Partial<AcademicYear>): Promise<AcademicYear> => 
-    fetchWithAuth('/api/academic-years', {
+    fetchWithAuth('/academic-years', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: Partial<AcademicYear>): Promise<AcademicYear> => 
-    fetchWithAuth(`/api/academic-years/${id}`, {
+    fetchWithAuth(`/academic-years/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   setCurrent: (id: string): Promise<AcademicYear> => 
-    fetchWithAuth(`/api/academic-years/${id}/set-current`, {
+    fetchWithAuth(`/academic-years/${id}/set-current`, {
       method: 'PUT',
     }),
 
   delete: (id: string): Promise<{ message: string }> => 
-    fetchWithAuth(`/api/academic-years/${id}`, { method: 'DELETE' }),
+    fetchWithAuth(`/academic-years/${id}`, { method: 'DELETE' }),
 
   getStats: (): Promise<any> => 
-    fetchWithAuth('/api/academic-years/stats/overview'),
+    fetchWithAuth('/academic-years/stats/overview'),
 };
 
 // Programs API
@@ -187,32 +187,32 @@ export const programsApi = {
     if (params?.status) searchParams.append('status', params.status);
     
     const queryString = searchParams.toString();
-    return fetchWithAuth(`/api/programs${queryString ? `?${queryString}` : ''}`);
+    return fetchWithAuth(`/programs${queryString ? `?${queryString}` : ''}`);
   },
 
   getById: (id: string): Promise<Program> => 
-    fetchWithAuth(`/api/programs/${id}`),
+    fetchWithAuth(`/programs/${id}`),
 
   create: (data: Partial<Program>): Promise<Program> => 
-    fetchWithAuth('/api/programs', {
+    fetchWithAuth('/programs', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: Partial<Program>): Promise<Program> => 
-    fetchWithAuth(`/api/programs/${id}`, {
+    fetchWithAuth(`/programs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string): Promise<{ message: string }> => 
-    fetchWithAuth(`/api/programs/${id}`, { method: 'DELETE' }),
+    fetchWithAuth(`/programs/${id}`, { method: 'DELETE' }),
 
   getByDepartment: (departmentId: string): Promise<Program[]> => 
-    fetchWithAuth(`/api/programs/department/${departmentId}`),
+    fetchWithAuth(`/programs/department/${departmentId}`),
 
   getDegreeTypes: (): Promise<string[]> => 
-    fetchWithAuth('/api/programs/meta/degree-types'),
+    fetchWithAuth('/programs/meta/degree-types'),
 };
 
 // Branches API
@@ -223,29 +223,29 @@ export const branchesApi = {
     if (params?.status) searchParams.append('status', params.status);
     
     const queryString = searchParams.toString();
-    return fetchWithAuth(`/api/branches${queryString ? `?${queryString}` : ''}`);
+    return fetchWithAuth(`/branches${queryString ? `?${queryString}` : ''}`);
   },
 
   getById: (id: string): Promise<Branch> => 
-    fetchWithAuth(`/api/branches/${id}`),
+    fetchWithAuth(`/branches/${id}`),
 
   create: (data: Partial<Branch>): Promise<Branch> => 
-    fetchWithAuth('/api/branches', {
+    fetchWithAuth('/branches', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: Partial<Branch>): Promise<Branch> => 
-    fetchWithAuth(`/api/branches/${id}`, {
+    fetchWithAuth(`/branches/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string): Promise<{ message: string }> => 
-    fetchWithAuth(`/api/branches/${id}`, { method: 'DELETE' }),
+    fetchWithAuth(`/branches/${id}`, { method: 'DELETE' }),
 
   getByProgram: (programId: string): Promise<Branch[]> => 
-    fetchWithAuth(`/api/branches/program/${programId}`),
+    fetchWithAuth(`/branches/program/${programId}`),
 };
 
 // Regulations API
@@ -257,32 +257,32 @@ export const regulationsApi = {
     if (params?.year) searchParams.append('year', params.year.toString());
     
     const queryString = searchParams.toString();
-    return fetchWithAuth(`/api/regulations${queryString ? `?${queryString}` : ''}`);
+    return fetchWithAuth(`/regulations${queryString ? `?${queryString}` : ''}`);
   },
 
   getById: (id: string): Promise<Regulation> => 
-    fetchWithAuth(`/api/regulations/${id}`),
+    fetchWithAuth(`/regulations/${id}`),
 
   create: (data: Partial<Regulation>): Promise<Regulation> => 
-    fetchWithAuth('/api/regulations', {
+    fetchWithAuth('/regulations', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: Partial<Regulation>): Promise<Regulation> => 
-    fetchWithAuth(`/api/regulations/${id}`, {
+    fetchWithAuth(`/regulations/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string): Promise<{ message: string }> => 
-    fetchWithAuth(`/api/regulations/${id}`, { method: 'DELETE' }),
+    fetchWithAuth(`/regulations/${id}`, { method: 'DELETE' }),
 
   getByProgram: (programId: string): Promise<Regulation[]> => 
-    fetchWithAuth(`/api/regulations/program/${programId}`),
+    fetchWithAuth(`/regulations/program/${programId}`),
 
   getCurrentlyEffective: (): Promise<Regulation[]> => 
-    fetchWithAuth('/api/regulations/effective/current'),
+    fetchWithAuth('/regulations/effective/current'),
 };
 
 // Batches API
@@ -295,41 +295,41 @@ export const batchesApi = {
     if (params?.status) searchParams.append('status', params.status);
     
     const queryString = searchParams.toString();
-    return fetchWithAuth(`/api/batches${queryString ? `?${queryString}` : ''}`);
+    return fetchWithAuth(`/batches${queryString ? `?${queryString}` : ''}`);
   },
 
   getActive: (): Promise<Batch[]> => 
-    fetchWithAuth('/api/batches/active'),
+    fetchWithAuth('/batches/active'),
 
   getById: (id: string): Promise<Batch> => 
-    fetchWithAuth(`/api/batches/${id}`),
+    fetchWithAuth(`/batches/${id}`),
 
   create: (data: Partial<Batch>): Promise<Batch> => 
-    fetchWithAuth('/api/batches', {
+    fetchWithAuth('/batches', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: Partial<Batch>): Promise<Batch> => 
-    fetchWithAuth(`/api/batches/${id}`, {
+    fetchWithAuth(`/batches/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string): Promise<{ message: string }> => 
-    fetchWithAuth(`/api/batches/${id}`, { method: 'DELETE' }),
+    fetchWithAuth(`/batches/${id}`, { method: 'DELETE' }),
 
   getByProgram: (programId: string): Promise<Batch[]> => 
-    fetchWithAuth(`/api/batches/program/${programId}`),
+    fetchWithAuth(`/batches/program/${programId}`),
 
   updateStudentCount: (id: string, count: number): Promise<Batch> => 
-    fetchWithAuth(`/api/batches/${id}/student-count`, {
+    fetchWithAuth(`/batches/${id}/student-count`, {
       method: 'PUT',
       body: JSON.stringify({ currentStudents: count }),
     }),
 
   getStats: (): Promise<any> => 
-    fetchWithAuth('/api/batches/stats/overview'),
+    fetchWithAuth('/batches/stats/overview'),
 };
 
 // Semesters API
@@ -341,38 +341,38 @@ export const semestersApi = {
     if (params?.number) searchParams.append('number', params.number.toString());
     
     const queryString = searchParams.toString();
-    return fetchWithAuth(`/api/semesters${queryString ? `?${queryString}` : ''}`);
+    return fetchWithAuth(`/semesters${queryString ? `?${queryString}` : ''}`);
   },
 
   getCurrent: (): Promise<Semester[]> => 
-    fetchWithAuth('/api/semesters/current'),
+    fetchWithAuth('/semesters/current'),
 
   getById: (id: string): Promise<Semester> => 
-    fetchWithAuth(`/api/semesters/${id}`),
+    fetchWithAuth(`/semesters/${id}`),
 
   create: (data: Partial<Semester>): Promise<Semester> => 
-    fetchWithAuth('/api/semesters', {
+    fetchWithAuth('/semesters', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: Partial<Semester>): Promise<Semester> => 
-    fetchWithAuth(`/api/semesters/${id}`, {
+    fetchWithAuth(`/semesters/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string): Promise<{ message: string }> => 
-    fetchWithAuth(`/api/semesters/${id}`, { method: 'DELETE' }),
+    fetchWithAuth(`/semesters/${id}`, { method: 'DELETE' }),
 
   getByAcademicYear: (academicYearId: string): Promise<Semester[]> => 
-    fetchWithAuth(`/api/semesters/academic-year/${academicYearId}`),
+    fetchWithAuth(`/semesters/academic-year/${academicYearId}`),
 
   getByRegulation: (regulationId: string): Promise<Semester[]> => 
-    fetchWithAuth(`/api/semesters/regulation/${regulationId}`),
+    fetchWithAuth(`/semesters/regulation/${regulationId}`),
 
   updateStatus: (id: string, status: string): Promise<Semester> => 
-    fetchWithAuth(`/api/semesters/${id}/status`, {
+    fetchWithAuth(`/semesters/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     }),

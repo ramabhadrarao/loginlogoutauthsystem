@@ -1,4 +1,4 @@
-// src/components/layout/Sidebar.tsx - Fixed version with ABAC support
+// src/components/layout/Sidebar.tsx - Updated with Academic menu items
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../utils/auth';
@@ -116,6 +116,121 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       });
     }
 
+    // Academic Section - check if user has access to any academic functionality
+    const academicPermissions = [
+      'academic_years.read',
+      'programs.read',
+      'branches.read',
+      'regulations.read',
+      'batches.read',
+      'semesters.read'
+    ];
+
+    const hasAcademicAccess = hasAnyPermission(academicPermissions);
+
+    if (hasAcademicAccess) {
+      const academicChildren: MenuItem[] = [];
+      let academicItemId = 200;
+
+      // Academic Years
+      if (hasPermission('academic_years.read')) {
+        academicChildren.push({
+          _id: (academicItemId++).toString(),
+          name: 'Academic Years',
+          route: '/academic/years',
+          icon: 'Calendar',
+          requiredPermission: 'academic_years.read',
+          sortOrder: 1,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
+      // Programs
+      if (hasPermission('programs.read')) {
+        academicChildren.push({
+          _id: (academicItemId++).toString(),
+          name: 'Programs',
+          route: '/academic/programs',
+          icon: 'GraduationCap',
+          requiredPermission: 'programs.read',
+          sortOrder: 2,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
+      // Branches
+      if (hasPermission('branches.read')) {
+        academicChildren.push({
+          _id: (academicItemId++).toString(),
+          name: 'Branches',
+          route: '/academic/branches',
+          icon: 'GitBranch',
+          requiredPermission: 'branches.read',
+          sortOrder: 3,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
+      // Regulations
+      if (hasPermission('regulations.read')) {
+        academicChildren.push({
+          _id: (academicItemId++).toString(),
+          name: 'Regulations',
+          route: '/academic/regulations',
+          icon: 'BookOpen',
+          requiredPermission: 'regulations.read',
+          sortOrder: 4,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
+      // Batches
+      if (hasPermission('batches.read')) {
+        academicChildren.push({
+          _id: (academicItemId++).toString(),
+          name: 'Batches',
+          route: '/academic/batches',
+          icon: 'Users',
+          requiredPermission: 'batches.read',
+          sortOrder: 5,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
+      // Semesters
+      if (hasPermission('semesters.read')) {
+        academicChildren.push({
+          _id: (academicItemId++).toString(),
+          name: 'Semesters',
+          route: '/academic/semesters',
+          icon: 'Calendar',
+          requiredPermission: 'semesters.read',
+          sortOrder: 6,
+          isActive: true,
+          parentId: itemId.toString()
+        });
+      }
+
+      // Only add academic menu if there are children
+      if (academicChildren.length > 0) {
+        menuItems.push({
+          _id: (itemId++).toString(),
+          name: 'Academic',
+          icon: 'GraduationCap',
+          route: '/academic',
+          requiredPermission: 'academic.access',
+          sortOrder: 5,
+          isActive: true,
+          children: academicChildren
+        });
+      }
+    }
+
     // Files/Attachments - show if user has any attachment permissions
     const attachmentPerms = getEffectivePermissions('attachments');
     if (attachmentPerms.canRead) {
@@ -125,7 +240,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         route: '/attachments',
         icon: 'File',
         requiredPermission: 'attachments.read',
-        sortOrder: 5,
+        sortOrder: 6,
         isActive: true
       });
     }
@@ -139,7 +254,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         route: '/settings',
         icon: 'Settings',
         requiredPermission: 'settings.read',
-        sortOrder: 6,
+        sortOrder: 7,
         isActive: true
       });
     }
@@ -222,24 +337,11 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           icon: 'ShieldCheck',
           route: '/admin',
           requiredPermission: 'admin.access',
-          sortOrder: 7,
+          sortOrder: 8,
           isActive: true,
           children: adminChildren
         });
       }
-    }
-
-    // Add standalone ABAC if user has permission but no other admin access
-    if (hasPermission('abac.manage') && !hasAdminAccess) {
-      menuItems.push({
-        _id: (itemId++).toString(),
-        name: 'ABAC Management',
-        route: '/admin/abac',
-        icon: 'Shield',
-        requiredPermission: 'abac.manage',
-        sortOrder: 8,
-        isActive: true
-      });
     }
 
     return menuItems;
@@ -344,7 +446,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           {/* Content area with loading */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="animate-pulse space-y-3">
-              {[...Array(6)].map((_, i) => (
+              {[...Array(8)].map((_, i) => (
                 <div key={i} className="flex items-center space-x-3">
                   <div className="h-5 w-5 bg-gray-300 rounded"></div>
                   <div className="h-4 bg-gray-300 rounded flex-1"></div>

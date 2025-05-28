@@ -1,4 +1,4 @@
-// src/utils/api.ts
+// src/utils/api.ts - Updated with password change functionality
 import { LoginCredentials, AuthResponse, User, Model, Permission, College, Attachment, SystemSetting, AuditLogEntry } from '../types';
 import { Department } from '../types';
 
@@ -40,6 +40,25 @@ export const authApi = {
 
   getProfile: (): Promise<User> => 
     fetchWithAuth('/auth/profile'),
+
+  changePassword: (data: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<{ message: string; timestamp: string }> =>
+    fetchWithAuth('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateProfile: (data: {
+    username?: string;
+    email?: string;
+  }): Promise<{ message: string; user: User }> =>
+    fetchWithAuth('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Users API calls
@@ -134,7 +153,6 @@ export const collegesApi = {
   delete: (id: string): Promise<{ message: string }> => 
     fetchWithAuth(`/colleges/${id}`, { method: 'DELETE' }),
 };
-
 
 // Department API call service  services
 export const departmentsApi = {

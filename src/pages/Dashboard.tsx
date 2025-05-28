@@ -1,13 +1,17 @@
-// src/pages/Dashboard.tsx - Updated with dynamic settings
+// src/pages/Dashboard.tsx - Updated with academic quick actions
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { useSettings } from '../hooks/useSettings'; // Add this import
-import { Users, Building, Building2, File, Settings, ArrowUpRight, Shield, Lock, Database, History, Plus, Eye, RefreshCw } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { 
+  Users, Building, Building2, File, Settings, ArrowUpRight, Shield, Lock, Database, History, 
+  Plus, Eye, RefreshCw, Calendar, GraduationCap, GitBranch, BookOpen, UserPlus 
+} from 'lucide-react';
 import { useAuth } from '../utils/auth';
 import { usersApi, collegesApi, attachmentsApi, settingsApi } from '../utils/api';
 import { departmentsApi } from '../utils/api';
+import { academicYearsApi, programsApi, branchesApi, regulationsApi, batchesApi, semestersApi } from '../utils/academicApi';
 
 interface StatCardProps {
   title: string;
@@ -112,7 +116,7 @@ interface QuickActionProps {
   icon: React.ReactNode;
   to: string;
   requiredPermission: string;
-  color: 'indigo' | 'purple' | 'green' | 'blue' | 'yellow';
+  color: 'indigo' | 'purple' | 'green' | 'blue' | 'yellow' | 'teal' | 'orange' | 'red';
 }
 
 const QuickAction = ({ title, description, icon, to, requiredPermission, color }: QuickActionProps) => {
@@ -127,7 +131,10 @@ const QuickAction = ({ title, description, icon, to, requiredPermission, color }
     purple: 'bg-purple-100 text-purple-600 hover:bg-purple-200 border-purple-200',
     green: 'bg-green-100 text-green-600 hover:bg-green-200 border-green-200',
     blue: 'bg-blue-100 text-blue-600 hover:bg-blue-200 border-blue-200',
-    yellow: 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200 border-yellow-200'
+    yellow: 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200 border-yellow-200',
+    teal: 'bg-teal-100 text-teal-600 hover:bg-teal-200 border-teal-200',
+    orange: 'bg-orange-100 text-orange-600 hover:bg-orange-200 border-orange-200',
+    red: 'bg-red-100 text-red-600 hover:bg-red-200 border-red-200'
   };
 
   return (
@@ -154,7 +161,7 @@ const QuickAction = ({ title, description, icon, to, requiredPermission, color }
 
 const Dashboard = () => {
   const { user, getEffectivePermissions } = useAuth();
-  const { getSetting } = useSettings(); // Add this hook
+  const { getSetting } = useSettings();
   
   // Get dynamic settings
   const siteName = getSetting('site.name', 'Permission System');
@@ -166,7 +173,13 @@ const Dashboard = () => {
     colleges: 0,
     departments: 0,
     attachments: 0,
-    settings: 0
+    settings: 0,
+    academicYears: 0,
+    programs: 0,
+    branches: 0,
+    regulations: 0,
+    batches: 0,
+    semesters: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +190,14 @@ const Dashboard = () => {
   const departmentPerms = getEffectivePermissions('departments');
   const attachmentPerms = getEffectivePermissions('attachments');
   const settingsPerms = getEffectivePermissions('settings');
+  
+  // Academic permissions
+  const academicYearsPerms = getEffectivePermissions('academic_years');
+  const programsPerms = getEffectivePermissions('programs');
+  const branchesPerms = getEffectivePermissions('branches');
+  const regulationsPerms = getEffectivePermissions('regulations');
+  const batchesPerms = getEffectivePermissions('batches');
+  const semestersPerms = getEffectivePermissions('semesters');
 
   // Load real statistics
   useEffect(() => {
@@ -219,6 +240,43 @@ const Dashboard = () => {
           );
         }
 
+        // Academic stats
+        if (academicYearsPerms.canRead) {
+          promises.push(
+            academicYearsApi.getAll().then(data => { results.academicYears = data.length; }).catch(() => { results.academicYears = 0; })
+          );
+        }
+
+        if (programsPerms.canRead) {
+          promises.push(
+            programsApi.getAll().then(data => { results.programs = data.length; }).catch(() => { results.programs = 0; })
+          );
+        }
+
+        if (branchesPerms.canRead) {
+          promises.push(
+            branchesApi.getAll().then(data => { results.branches = data.length; }).catch(() => { results.branches = 0; })
+          );
+        }
+
+        if (regulationsPerms.canRead) {
+          promises.push(
+            regulationsApi.getAll().then(data => { results.regulations = data.length; }).catch(() => { results.regulations = 0; })
+          );
+        }
+
+        if (batchesPerms.canRead) {
+          promises.push(
+            batchesApi.getAll().then(data => { results.batches = data.length; }).catch(() => { results.batches = 0; })
+          );
+        }
+
+        if (semestersPerms.canRead) {
+          promises.push(
+            semestersApi.getAll().then(data => { results.semesters = data.length; }).catch(() => { results.semesters = 0; })
+          );
+        }
+
         await Promise.all(promises);
         setStats(results);
       } catch (err: any) {
@@ -230,7 +288,7 @@ const Dashboard = () => {
     };
 
     loadStats();
-  }, [userPerms.canRead, collegePerms.canRead, departmentPerms.canRead, attachmentPerms.canRead, settingsPerms.canRead]);
+  }, [userPerms.canRead, collegePerms.canRead, departmentPerms.canRead, attachmentPerms.canRead, settingsPerms.canRead, academicYearsPerms.canRead, programsPerms.canRead, branchesPerms.canRead, regulationsPerms.canRead, batchesPerms.canRead, semestersPerms.canRead]);
 
   const refreshStats = () => {
     setLoading(true);
@@ -253,7 +311,6 @@ const Dashboard = () => {
           <p className="mt-1 text-gray-500">
             Welcome back, {user?.username}! {user?.isSuperAdmin && '👑'}
           </p>
-          {/* Show dynamic site description */}
           <p className="mt-1 text-sm text-gray-400">{siteDescription}</p>
         </div>
         <Button
@@ -301,7 +358,7 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Stats Grid - Only show cards for resources user has access to */}
+      {/* Main Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {userPerms.canRead && (
           <StatCard
@@ -350,8 +407,91 @@ const Dashboard = () => {
             loading={loading}
           />
         )}
-        
-        {settingsPerms.canRead && (
+      </div>
+
+      {/* Academic Stats Grid */}
+      {(academicYearsPerms.canRead || programsPerms.canRead || branchesPerms.canRead || regulationsPerms.canRead || batchesPerms.canRead || semestersPerms.canRead) && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Academic Overview</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {academicYearsPerms.canRead && (
+              <StatCard
+                title="Academic Years"
+                value={stats.academicYears}
+                icon={<Calendar className="h-6 w-6" />}
+                description="Academic calendar years"
+                linkTo="/academic/years"
+                permissions={academicYearsPerms}
+                loading={loading}
+              />
+            )}
+
+            {programsPerms.canRead && (
+              <StatCard
+                title="Programs"
+                value={stats.programs}
+                icon={<GraduationCap className="h-6 w-6" />}
+                description="Degree programs"
+                linkTo="/academic/programs"
+                permissions={programsPerms}
+                loading={loading}
+              />
+            )}
+
+            {branchesPerms.canRead && (
+              <StatCard
+                title="Branches"
+                value={stats.branches}
+                icon={<GitBranch className="h-6 w-6" />}
+                description="Program specializations"
+                linkTo="/academic/branches"
+                permissions={branchesPerms}
+                loading={loading}
+              />
+            )}
+
+            {regulationsPerms.canRead && (
+              <StatCard
+                title="Regulations"
+                value={stats.regulations}
+                icon={<BookOpen className="h-6 w-6" />}
+                description="Academic regulations"
+                linkTo="/academic/regulations"
+                permissions={regulationsPerms}
+                loading={loading}
+              />
+            )}
+
+            {batchesPerms.canRead && (
+              <StatCard
+                title="Batches"
+                value={stats.batches}
+                icon={<UserPlus className="h-6 w-6" />}
+                description="Student batches"
+                linkTo="/academic/batches"
+                permissions={batchesPerms}
+                loading={loading}
+              />
+            )}
+
+            {semestersPerms.canRead && (
+              <StatCard
+                title="Semesters"
+                value={stats.semesters}
+                icon={<Calendar className="h-6 w-6" />}
+                description="Academic semesters"
+                linkTo="/academic/semesters"
+                permissions={semestersPerms}
+                loading={loading}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Settings Card */}
+      {settingsPerms.canRead && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Settings"
             value={stats.settings}
@@ -361,26 +501,14 @@ const Dashboard = () => {
             permissions={settingsPerms}
             loading={loading}
           />
-        )}
-      </div>
-
-      {/* Show message if no stats are available */}
-      {!userPerms.canRead && !collegePerms.canRead && !departmentPerms.canRead && !attachmentPerms.canRead && !settingsPerms.canRead && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Shield className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Statistics Available</h3>
-            <p className="text-gray-500">
-              You need read permissions for at least one resource to view dashboard statistics.
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* Admin Actions */}
           <QuickAction
             title="Manage Permissions"
             description="Assign user permissions"
@@ -407,7 +535,17 @@ const Dashboard = () => {
             requiredPermission="audit.read"
             color="blue"
           />
+
+          <QuickAction
+            title="ABAC Management"
+            description="Dynamic access control"
+            icon={<Shield className="h-5 w-5" />}
+            to="/admin/abac"
+            requiredPermission="abac.manage"
+            color="purple"
+          />
           
+          {/* Institution Actions */}
           <QuickAction
             title="Add College"
             description="Register new institution"
@@ -423,9 +561,65 @@ const Dashboard = () => {
             icon={<Building2 className="h-5 w-5" />}
             to="/departments"
             requiredPermission="departments.create"
+            color="teal"
+          />
+
+          {/* Academic Actions */}
+          <QuickAction
+            title="Academic Years"
+            description="Manage academic calendar"
+            icon={<Calendar className="h-5 w-5" />}
+            to="/academic/years"
+            requiredPermission="academic_years.create"
             color="blue"
           />
+
+          <QuickAction
+            title="Create Program"
+            description="Add degree program"
+            icon={<GraduationCap className="h-5 w-5" />}
+            to="/academic/programs"
+            requiredPermission="programs.create"
+            color="indigo"
+          />
+
+          <QuickAction
+            title="Add Branch"
+            description="Create specialization"
+            icon={<GitBranch className="h-5 w-5" />}
+            to="/academic/branches"
+            requiredPermission="branches.create"
+            color="green"
+          />
+
+          <QuickAction
+            title="Create Regulation"
+            description="Add academic regulation"
+            icon={<BookOpen className="h-5 w-5" />}
+            to="/academic/regulations"
+            requiredPermission="regulations.create"
+            color="orange"
+          />
+
+          <QuickAction
+            title="Add Batch"
+            description="Create student batch"
+            icon={<UserPlus className="h-5 w-5" />}
+            to="/academic/batches"
+            requiredPermission="batches.create"
+            color="teal"
+          />
+
+          <QuickAction
+            title="Add Semester"
+            description="Create academic semester"
+            icon={<Calendar className="h-5 w-5" />}
+            to="/academic/semesters"
+            requiredPermission="semesters.create"
+            color="purple"
+          />
           
+          {/* System Actions */}
           <QuickAction
             title="Upload Files"
             description="Add new attachments"
@@ -441,15 +635,7 @@ const Dashboard = () => {
             icon={<Settings className="h-5 w-5" />}
             to="/settings"
             requiredPermission="settings.update"
-            color="indigo"
-          />
-          <QuickAction
-            title="ABAC Management"
-            description="Dynamic access control"
-            icon={<Shield className="h-5 w-5" />}
-            to="/admin/abac"
-            requiredPermission="abac.manage"
-            color="purple"
+            color="red"
           />
         </div>
       </div>
@@ -516,6 +702,36 @@ const Dashboard = () => {
                       departmentPerms.canCreate && 'Create',
                       departmentPerms.canUpdate && 'Update',
                       departmentPerms.canDelete && 'Delete'
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              )}
+
+              {academicYearsPerms.canRead && (
+                <div className="text-center p-4 rounded-lg border border-gray-200">
+                  <Calendar className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+                  <h4 className="font-medium text-gray-900">Academic Years</h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {[
+                      academicYearsPerms.canRead && 'Read',
+                      academicYearsPerms.canCreate && 'Create',
+                      academicYearsPerms.canUpdate && 'Update',
+                      academicYearsPerms.canDelete && 'Delete'
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              )}
+
+              {programsPerms.canRead && (
+                <div className="text-center p-4 rounded-lg border border-gray-200">
+                  <GraduationCap className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+                  <h4 className="font-medium text-gray-900">Programs</h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {[
+                      programsPerms.canRead && 'Read',
+                      programsPerms.canCreate && 'Create',
+                      programsPerms.canUpdate && 'Update',
+                      programsPerms.canDelete && 'Delete'
                     ].filter(Boolean).join(', ')}
                   </p>
                 </div>

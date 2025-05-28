@@ -37,7 +37,7 @@ export const BASE_MENU_ITEMS = {
   },
   programs: {
     name: 'Programs',
-    route: '/programs',
+    route: 'academic/programs',
     icon: 'GraduationCap',
     requiredPermission: 'programs.read',
     sortOrder: 5,
@@ -45,7 +45,7 @@ export const BASE_MENU_ITEMS = {
   },
   branches: {
     name: 'Branches',
-    route: '/branches',
+    route: 'academic/branches',
     icon: 'GitBranch',
     requiredPermission: 'branches.read',
     sortOrder: 6,
@@ -53,7 +53,7 @@ export const BASE_MENU_ITEMS = {
   },
   academicYears: {
     name: 'Academic Years',
-    route: '/academic-years',
+    route: 'academic/years',
     icon: 'Calendar',
     requiredPermission: 'academic_years.read',
     sortOrder: 7,
@@ -61,7 +61,7 @@ export const BASE_MENU_ITEMS = {
   },
   regulations: {
     name: 'Regulations',
-    route: '/regulations',
+    route: 'academic/regulations',
     icon: 'FileText',
     requiredPermission: 'regulations.read',
     sortOrder: 8,
@@ -69,7 +69,7 @@ export const BASE_MENU_ITEMS = {
   },
   semesters: {
     name: 'Semesters',
-    route: '/semesters',
+    route: 'academic/semesters',
     icon: 'Clock',
     requiredPermission: 'semesters.read',
     sortOrder: 9,
@@ -77,7 +77,7 @@ export const BASE_MENU_ITEMS = {
   },
   batches: {
     name: 'Batches',
-    route: '/batches',
+    route: 'academic/batches',
     icon: 'Users2',
     requiredPermission: 'batches.read',
     sortOrder: 10,
