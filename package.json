@@ -9,7 +9,9 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "server": "nodemon server/index.js",
-    "seed": "node server/utils/seedData.js"
+    "seed": "node server/utils/seedData.js",
+    "menu": "node scripts/menuManager.js"
+
   },
   "dependencies": {
     "@tanstack/react-query": "^5.17.15",
