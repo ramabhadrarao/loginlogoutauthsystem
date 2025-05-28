@@ -1,10 +1,7 @@
+// server/middleware/auth.js
 import jwt from 'jsonwebtoken';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import User from '../models/User.js';
+import Permission from '../models/Permission.js';
 
 export const verifyToken = async (req, res, next) => {
   try {
@@ -16,14 +13,12 @@ export const verifyToken = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from Supabase
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*, user_permissions(permission_id)')
-      .eq('id', decoded.userId)
-      .single();
+    // Get user from MongoDB with populated permissions
+    const user = await User.findById(decoded.userId)
+      .populate('permissions')
+      .select('-password');
 
-    if (error || !user) {
+    if (!user) {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
@@ -31,6 +26,7 @@ export const verifyToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
@@ -39,24 +35,22 @@ export const checkPermission = (requiredPermission) => {
   return async (req, res, next) => {
     try {
       // Super admin bypass
-      if (req.user.is_super_admin) {
+      if (req.user.isSuperAdmin) {
         return next();
       }
 
       // Check user permissions
-      const { data: permission, error } = await supabase
-        .from('user_permissions')
-        .select('*')
-        .eq('user_id', req.user.id)
-        .eq('permission_key', requiredPermission)
-        .single();
+      const hasPermission = req.user.permissions.some(
+        permission => permission.permissionKey === requiredPermission
+      );
 
-      if (error || !permission) {
+      if (!hasPermission) {
         return res.status(403).json({ message: 'Insufficient permissions' });
       }
 
       next();
     } catch (error) {
+      console.error('Permission check error:', error);
       return res.status(500).json({ message: 'Error checking permissions' });
     }
   };

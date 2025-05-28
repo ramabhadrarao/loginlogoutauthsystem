@@ -1,14 +1,10 @@
+// server/routes/auth.js
 import express from 'express';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
-import { createClient } from '@supabase/supabase-js';
+import User from '../models/User.js';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 // Login validation middleware
 const loginValidation = [
@@ -27,33 +23,27 @@ router.post('/login', loginValidation, async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Get user from Supabase
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*, user_permissions(permission_id)')
-      .eq('email', email)
-      .single();
+    // Get user from MongoDB
+    const user = await User.findOne({ email }).populate('permissions');
 
-    if (error || !user) {
+    if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
-    const validPassword = await bcrypt.compare(password, user.password_hash);
+    // Check password using the model method
+    const validPassword = await user.comparePassword(password);
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '24h' }
     );
 
-    // Remove sensitive data
-    delete user.password_hash;
-
+    // Return user data (password already removed by toJSON method)
     res.json({ token, user });
   } catch (error) {
     console.error('Login error:', error);
@@ -76,19 +66,12 @@ router.get('/profile', async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from Supabase
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*, user_permissions(permission_id)')
-      .eq('id', decoded.userId)
-      .single();
+    // Get user from MongoDB
+    const user = await User.findById(decoded.userId).populate('permissions');
 
-    if (error || !user) {
+    if (!user) {
       return res.status(401).json({ message: 'Invalid token' });
     }
-
-    // Remove sensitive data
-    delete user.password_hash;
 
     res.json(user);
   } catch (error) {

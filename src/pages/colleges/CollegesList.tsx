@@ -1,79 +1,124 @@
-import React, { useState } from 'react';
+// src/pages/colleges/CollegesList.tsx
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { Building, Plus, Search, Edit, Trash2, Link, Mail, Phone } from 'lucide-react';
+import { Building, Plus, Search, Edit, Trash2, Link, Mail, Phone, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../utils/auth';
-
-// Sample colleges data
-const collegesData = [
-  {
-    _id: '1',
-    name: 'Stanford University',
-    code: 'STAN',
-    logo: 'https://images.pexels.com/photos/356079/pexels-photo-356079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    website: 'https://stanford.edu',
-    address: '450 Serra Mall, Stanford, CA 94305',
-    phone: '(650) 723-2300',
-    email: 'admission@stanford.edu',
-    status: 'active',
-    dateCreated: '2023-01-15T00:00:00.000Z',
-    dateUpdated: '2023-04-10T00:00:00.000Z'
-  },
-  {
-    _id: '2',
-    name: 'Massachusetts Institute of Technology',
-    code: 'MIT',
-    logo: 'https://images.pexels.com/photos/356079/pexels-photo-356079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    website: 'https://mit.edu',
-    address: '77 Massachusetts Ave, Cambridge, MA 02139',
-    phone: '(617) 253-1000',
-    email: 'admission@mit.edu',
-    status: 'active',
-    dateCreated: '2023-01-16T00:00:00.000Z',
-    dateUpdated: '2023-04-11T00:00:00.000Z'
-  },
-  {
-    _id: '3',
-    name: 'Harvard University',
-    code: 'HARV',
-    logo: 'https://images.pexels.com/photos/356079/pexels-photo-356079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    website: 'https://harvard.edu',
-    address: 'Cambridge, MA 02138',
-    phone: '(617) 495-1000',
-    email: 'college@harvard.edu',
-    status: 'active',
-    dateCreated: '2023-01-17T00:00:00.000Z',
-    dateUpdated: '2023-04-12T00:00:00.000Z'
-  },
-  {
-    _id: '4',
-    name: 'California Institute of Technology',
-    code: 'CALTECH',
-    logo: 'https://images.pexels.com/photos/356079/pexels-photo-356079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    website: 'https://caltech.edu',
-    address: '1200 E California Blvd, Pasadena, CA 91125',
-    phone: '(626) 395-6811',
-    email: 'admission@caltech.edu',
-    status: 'active',
-    dateCreated: '2023-01-18T00:00:00.000Z',
-    dateUpdated: '2023-04-13T00:00:00.000Z'
-  }
-];
+import { collegesApi } from '../../utils/api';
+import { College } from '../../types';
 
 const CollegesList = () => {
   const { hasPermission } = useAuth();
-  const [colleges, setColleges] = useState(collegesData);
+  const [colleges, setColleges] = useState<College[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Filter colleges by search term
-  const filteredColleges = colleges.filter(college => 
-    college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    college.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const canCreateCollege = hasPermission('colleges.create');
   const canUpdateCollege = hasPermission('colleges.update');
   const canDeleteCollege = hasPermission('colleges.delete');
+
+  // Load colleges from API
+  useEffect(() => {
+    loadColleges();
+  }, []);
+
+  const loadColleges = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await collegesApi.getAll();
+      setColleges(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load colleges');
+      console.error('Load colleges error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter colleges by search term
+  const filteredColleges = colleges.filter(college => 
+    college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    college.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (college.email && college.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}?`)) {
+      return;
+    }
+
+    try {
+      await collegesApi.delete(id);
+      setColleges(colleges.filter(college => college._id !== id));
+    } catch (err: any) {
+      alert('Failed to delete college: ' + err.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Colleges</h1>
+            <p className="mt-1 text-gray-500">Manage educational institutions</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <div className="h-40 bg-gray-200 animate-pulse"></div>
+              <CardHeader className="pb-2">
+                <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent className="pb-2 pt-0">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Colleges</h1>
+            <p className="mt-1 text-gray-500">Manage educational institutions</p>
+          </div>
+          <Button 
+            onClick={loadColleges}
+            icon={<RefreshCw className="h-4 w-4" />}
+          >
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">
+                <Building className="h-12 w-12 mx-auto opacity-50" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Colleges</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <Button onClick={loadColleges} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,13 +129,22 @@ const CollegesList = () => {
             Manage educational institutions
           </p>
         </div>
-        {canCreateCollege && (
+        <div className="flex items-center gap-2">
           <Button 
-            icon={<Plus className="h-4 w-4" />}
+            variant="outline"
+            onClick={loadColleges}
+            icon={<RefreshCw className="h-4 w-4" />}
           >
-            Add College
+            Refresh
           </Button>
-        )}
+          {canCreateCollege && (
+            <Button 
+              icon={<Plus className="h-4 w-4" />}
+            >
+              Add College
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
@@ -122,6 +176,10 @@ const CollegesList = () => {
                 src={college.logo || 'https://images.pexels.com/photos/356079/pexels-photo-356079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'} 
                 alt={college.name}
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://images.pexels.com/photos/356079/pexels-photo-356079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent">
                 <div className="absolute bottom-0 p-4">
@@ -135,7 +193,7 @@ const CollegesList = () => {
             <CardHeader className="pb-2">
               <CardTitle className="line-clamp-1 text-lg">{college.name}</CardTitle>
               <CardDescription className="line-clamp-2">
-                {college.address}
+                {college.address || 'No address provided'}
               </CardDescription>
             </CardHeader>
             
@@ -148,7 +206,7 @@ const CollegesList = () => {
                       href={college.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-800"
+                      className="text-indigo-600 hover:text-indigo-800 truncate"
                     >
                       {college.website.replace(/^https?:\/\//, '')}
                     </a>
@@ -160,7 +218,7 @@ const CollegesList = () => {
                     <Mail className="h-4 w-4 text-gray-400" />
                     <a 
                       href={`mailto:${college.email}`}
-                      className="text-gray-700 hover:text-gray-900"
+                      className="text-gray-700 hover:text-gray-900 truncate"
                     >
                       {college.email}
                     </a>
@@ -184,7 +242,7 @@ const CollegesList = () => {
             <CardFooter className="border-t bg-gray-50 pt-4">
               <div className="flex w-full justify-between">
                 <span className="text-xs text-gray-500">
-                  Last updated: {new Date(college.dateUpdated).toLocaleDateString()}
+                  Updated: {new Date(college.dateUpdated).toLocaleDateString()}
                 </span>
                 
                 <div className="flex space-x-2">
@@ -194,6 +252,7 @@ const CollegesList = () => {
                       size="sm"
                       className="h-8 w-8 p-0"
                       icon={<Edit className="h-4 w-4 text-gray-500" />}
+                      title="Edit college"
                     >
                       <span className="sr-only">Edit</span>
                     </Button>
@@ -205,6 +264,8 @@ const CollegesList = () => {
                       size="sm"
                       className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-600"
                       icon={<Trash2 className="h-4 w-4" />}
+                      onClick={() => handleDelete(college._id, college.name)}
+                      title="Delete college"
                     >
                       <span className="sr-only">Delete</span>
                     </Button>
@@ -215,7 +276,7 @@ const CollegesList = () => {
           </Card>
         ))}
         
-        {filteredColleges.length === 0 && (
+        {filteredColleges.length === 0 && !loading && (
           <div className="col-span-full flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12">
             <div className="text-center">
               <Building className="mx-auto h-12 w-12 text-gray-400" />

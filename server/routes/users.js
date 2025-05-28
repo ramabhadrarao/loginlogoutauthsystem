@@ -1,29 +1,34 @@
+// server/routes/users.js
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { createClient } from '@supabase/supabase-js';
+import User from '../models/User.js';
+import Permission from '../models/Permission.js';
+import AuditLog from '../models/AuditLog.js';
 import { checkPermission } from '../middleware/auth.js';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 // Get all users
 router.get('/', checkPermission('users.read'), async (req, res) => {
   try {
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('*, user_permissions(permission_id)');
-
-    if (error) throw error;
-
-    // Remove sensitive data
-    users.forEach(user => delete user.password_hash);
-
+    const users = await User.find().populate('permissions');
     res.json(users);
   } catch (error) {
     console.error('Get users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user by ID
+router.get('/:id', checkPermission('users.read'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('permissions');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Get user error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -43,29 +48,41 @@ router.post('/', checkPermission('users.create'), createUserValidation, async (r
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, username, password, permissions } = req.body;
+    const { email, username, password, permissions, isSuperAdmin } = req.body;
 
-    // Create user in Supabase
-    const { data: user, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: { username }
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { username }] 
     });
 
-    if (error) throw error;
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User with this email or username already exists' 
+      });
+    }
 
-    // Assign permissions if provided
+    // Create user
+    const user = new User({
+      email,
+      username,
+      password,
+      isSuperAdmin: isSuperAdmin || false,
+      permissions: permissions || []
+    });
+
+    await user.save();
+    await user.populate('permissions');
+
+    // Log permission assignments
     if (permissions && permissions.length > 0) {
-      const permissionInserts = permissions.map(permissionId => ({
-        user_id: user.id,
-        permission_id: permissionId
+      const auditEntries = permissions.map(permissionId => ({
+        userId: user._id,
+        action: 'granted',
+        permissionKey: 'bulk_assignment',
+        changedBy: req.user._id,
+        reason: 'Initial user creation'
       }));
-
-      const { error: permError } = await supabase
-        .from('user_permissions')
-        .insert(permissionInserts);
-
-      if (permError) throw permError;
+      await AuditLog.insertMany(auditEntries);
     }
 
     res.status(201).json(user);
@@ -91,47 +108,52 @@ router.put('/:id', checkPermission('users.update'), updateUserValidation, async 
     }
 
     const { id } = req.params;
-    const { email, username, password, permissions } = req.body;
+    const { email, username, password, permissions, isSuperAdmin } = req.body;
 
-    // Update user in Supabase
-    const { data: user, error } = await supabase
-      .from('users')
-      .update({ email, username })
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
-
-    // Update password if provided
-    if (password) {
-      const { error: pwError } = await supabase.auth.admin.updateUserById(
-        id,
-        { password }
-      );
-
-      if (pwError) throw pwError;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    // Update basic fields
+    if (email) user.email = email;
+    if (username) user.username = username;
+    if (password) user.password = password;
+    if (typeof isSuperAdmin !== 'undefined') user.isSuperAdmin = isSuperAdmin;
 
     // Update permissions if provided
     if (permissions) {
-      // Delete existing permissions
-      await supabase
-        .from('user_permissions')
-        .delete()
-        .eq('user_id', id);
+      const oldPermissions = user.permissions.map(p => p.toString());
+      user.permissions = permissions;
 
-      // Insert new permissions
-      const permissionInserts = permissions.map(permissionId => ({
-        user_id: id,
-        permission_id: permissionId
-      }));
+      // Log permission changes
+      const addedPermissions = permissions.filter(p => !oldPermissions.includes(p));
+      const removedPermissions = oldPermissions.filter(p => !permissions.includes(p));
 
-      const { error: permError } = await supabase
-        .from('user_permissions')
-        .insert(permissionInserts);
+      const auditEntries = [
+        ...addedPermissions.map(permissionId => ({
+          userId: user._id,
+          action: 'granted',
+          permissionKey: 'permission_update',
+          changedBy: req.user._id,
+          reason: 'User permission update'
+        })),
+        ...removedPermissions.map(permissionId => ({
+          userId: user._id,
+          action: 'revoked',
+          permissionKey: 'permission_update',
+          changedBy: req.user._id,
+          reason: 'User permission update'
+        }))
+      ];
 
-      if (permError) throw permError;
+      if (auditEntries.length > 0) {
+        await AuditLog.insertMany(auditEntries);
+      }
     }
+
+    await user.save();
+    await user.populate('permissions');
 
     res.json(user);
   } catch (error) {
@@ -145,14 +167,81 @@ router.delete('/:id', checkPermission('users.delete'), async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Delete user from Supabase
-    const { error } = await supabase.auth.admin.deleteUser(id);
-
-    if (error) throw error;
+    const user = await User.findByIdAndDelete(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user permissions
+router.get('/:id/permissions', checkPermission('users.read'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('permissions');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user.permissions);
+  } catch (error) {
+    console.error('Get user permissions error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Assign permissions to user
+router.post('/:id/permissions', checkPermission('permissions.manage'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { permissions } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate permissions exist
+    const validPermissions = await Permission.find({ _id: { $in: permissions } });
+    if (validPermissions.length !== permissions.length) {
+      return res.status(400).json({ message: 'Invalid permissions provided' });
+    }
+
+    const oldPermissions = user.permissions.map(p => p.toString());
+    user.permissions = permissions;
+    await user.save();
+
+    // Log permission changes
+    const addedPermissions = permissions.filter(p => !oldPermissions.includes(p));
+    const removedPermissions = oldPermissions.filter(p => !permissions.includes(p));
+
+    const auditEntries = [
+      ...addedPermissions.map(permissionId => ({
+        userId: user._id,
+        action: 'granted',
+        permissionKey: 'permission_assignment',
+        changedBy: req.user._id,
+        reason: 'Manual permission assignment'
+      })),
+      ...removedPermissions.map(permissionId => ({
+        userId: user._id,
+        action: 'revoked',
+        permissionKey: 'permission_assignment',
+        changedBy: req.user._id,
+        reason: 'Manual permission revocation'
+      }))
+    ];
+
+    if (auditEntries.length > 0) {
+      await AuditLog.insertMany(auditEntries);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Assign permissions error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

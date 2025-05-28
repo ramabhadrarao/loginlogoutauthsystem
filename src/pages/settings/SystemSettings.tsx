@@ -1,99 +1,67 @@
-import React, { useState } from 'react';
+// src/pages/settings/SystemSettings.tsx
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import FormField from '../../components/ui/FormField';
 import { useAuth } from '../../utils/auth';
+import { settingsApi } from '../../utils/api';
+import { SystemSetting } from '../../types';
 import { Settings, Save, RefreshCw, Check, Shield, Mail, Globe, Clock } from 'lucide-react';
-
-// Sample settings data
-const settingsData = [
-  {
-    _id: '1',
-    settingKey: 'site.name',
-    settingValue: 'Permission System',
-    settingGroup: 'general',
-    isPublic: true,
-    description: 'The name of the site',
-    dateCreated: '2023-01-01T00:00:00.000Z',
-    dateUpdated: '2023-01-01T00:00:00.000Z'
-  },
-  {
-    _id: '2',
-    settingKey: 'site.description',
-    settingValue: 'Multi-user authentication and permission system',
-    settingGroup: 'general',
-    isPublic: true,
-    description: 'The description of the site',
-    dateCreated: '2023-01-01T00:00:00.000Z',
-    dateUpdated: '2023-01-01T00:00:00.000Z'
-  },
-  {
-    _id: '3',
-    settingKey: 'email.from_address',
-    settingValue: 'noreply@example.com',
-    settingGroup: 'email',
-    isPublic: false,
-    description: 'The email address that system emails are sent from',
-    dateCreated: '2023-01-01T00:00:00.000Z',
-    dateUpdated: '2023-01-01T00:00:00.000Z'
-  },
-  {
-    _id: '4',
-    settingKey: 'email.smtp_host',
-    settingValue: 'smtp.example.com',
-    settingGroup: 'email',
-    isPublic: false,
-    description: 'SMTP server hostname',
-    dateCreated: '2023-01-01T00:00:00.000Z',
-    dateUpdated: '2023-01-01T00:00:00.000Z'
-  },
-  {
-    _id: '5',
-    settingKey: 'security.password_expiry_days',
-    settingValue: '90',
-    settingGroup: 'security',
-    isPublic: false,
-    description: 'Number of days before passwords expire',
-    dateCreated: '2023-01-01T00:00:00.000Z',
-    dateUpdated: '2023-01-01T00:00:00.000Z'
-  },
-  {
-    _id: '6',
-    settingKey: 'security.session_timeout_minutes',
-    settingValue: '30',
-    settingGroup: 'security',
-    isPublic: false,
-    description: 'Number of minutes before user sessions timeout',
-    dateCreated: '2023-01-01T00:00:00.000Z',
-    dateUpdated: '2023-01-01T00:00:00.000Z'
-  }
-];
-
-// Group settings by their group
-const groupedSettings = settingsData.reduce((acc, setting) => {
-  const group = setting.settingGroup;
-  if (!acc[group]) {
-    acc[group] = [];
-  }
-  acc[group].push(setting);
-  return acc;
-}, {} as Record<string, typeof settingsData>);
 
 const SystemSettings = () => {
   const { hasPermission } = useAuth();
-  const [settings, setSettings] = useState(settingsData);
+  const [settings, setSettings] = useState<SystemSetting[]>([]);
   const [activeGroup, setActiveGroup] = useState('general');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [formValues, setFormValues] = useState<Record<string, string>>(
-    settingsData.reduce((acc, setting) => {
-      acc[setting.settingKey] = setting.settingValue;
-      return acc;
-    }, {} as Record<string, string>)
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
 
   const canUpdateSettings = hasPermission('settings.update');
+
+  // Load settings from API
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await settingsApi.getAll();
+      setSettings(data);
+      
+      // Initialize form values
+      const initialValues = data.reduce((acc, setting) => {
+        acc[setting.settingKey] = setting.settingValue;
+        return acc;
+      }, {} as Record<string, string>);
+      setFormValues(initialValues);
+      
+      // Set first available group as active
+      if (data.length > 0) {
+        const groups = [...new Set(data.map(s => s.settingGroup))];
+        setActiveGroup(groups[0] || 'general');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load settings');
+      console.error('Load settings error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Group settings by their group
+  const groupedSettings = settings.reduce((acc, setting) => {
+    const group = setting.settingGroup || 'general';
+    if (!acc[group]) {
+      acc[group] = [];
+    }
+    acc[group].push(setting);
+    return acc;
+  }, {} as Record<string, SystemSetting[]>);
 
   const handleInputChange = (settingKey: string, value: string) => {
     setFormValues(prev => ({
@@ -105,23 +73,45 @@ const SystemSettings = () => {
   const handleSave = async () => {
     if (!canUpdateSettings) return;
     
-    setIsLoading(true);
+    setSaving(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update settings
-    const updatedSettings = settings.map(setting => ({
-      ...setting,
-      settingValue: formValues[setting.settingKey],
-      dateUpdated: new Date().toISOString()
-    }));
-    
-    setSettings(updatedSettings);
-    setIsLoading(false);
-    
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    try {
+      // Get only the settings for the active group
+      const activeGroupSettings = groupedSettings[activeGroup] || [];
+      const settingsToUpdate = activeGroupSettings.map(setting => ({
+        settingKey: setting.settingKey,
+        settingValue: formValues[setting.settingKey],
+        settingGroup: setting.settingGroup,
+        description: setting.description,
+        isPublic: setting.isPublic
+      }));
+
+      await settingsApi.bulkUpdate(settingsToUpdate);
+      
+      // Update local state
+      setSettings(prevSettings => 
+        prevSettings.map(setting => ({
+          ...setting,
+          settingValue: formValues[setting.settingKey] || setting.settingValue,
+          dateUpdated: new Date().toISOString()
+        }))
+      );
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert('Failed to save settings: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    const originalValues = settings.reduce((acc, setting) => {
+      acc[setting.settingKey] = setting.settingValue;
+      return acc;
+    }, {} as Record<string, string>);
+    setFormValues(originalValues);
   };
 
   // Get the appropriate icon for each setting group
@@ -137,6 +127,96 @@ const SystemSettings = () => {
         return <Settings className="h-5 w-5" />;
     }
   };
+
+  // Get the appropriate icon for each setting
+  const getSettingIcon = (key: string) => {
+    if (key.includes('email')) return <Mail className="h-4 w-4 text-gray-400" />;
+    if (key.includes('site')) return <Globe className="h-4 w-4 text-gray-400" />;
+    if (key.includes('timeout') || key.includes('expiry')) return <Clock className="h-4 w-4 text-gray-400" />;
+    if (key.includes('security')) return <Shield className="h-4 w-4 text-gray-400" />;
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
+          <p className="mt-1 text-gray-500">Configure global settings for the application</p>
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="px-6 py-3">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-3">
+            <Card>
+              <CardHeader>
+                <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4"></div>
+                      <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
+            <p className="mt-1 text-gray-500">Configure global settings for the application</p>
+          </div>
+          <Button 
+            onClick={loadSettings}
+            icon={<RefreshCw className="h-4 w-4" />}
+          >
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">
+                <Settings className="h-12 w-12 mx-auto opacity-50" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Settings</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <Button onClick={loadSettings} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -190,6 +270,9 @@ const SystemSettings = () => {
                       {getGroupIcon(group)}
                     </div>
                     <span className="capitalize">{group}</span>
+                    <span className="ml-auto text-xs text-gray-400">
+                      {groupedSettings[group]?.length || 0}
+                    </span>
                   </button>
                 ))}
               </nav>
@@ -212,18 +295,9 @@ const SystemSettings = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {groupedSettings[activeGroup]?.map(setting => {
-                  // Get the appropriate icon for each setting
-                  const getSettingIcon = (key: string) => {
-                    if (key.includes('email')) return <Mail className="h-4 w-4 text-gray-400" />;
-                    if (key.includes('site')) return <Globe className="h-4 w-4 text-gray-400" />;
-                    if (key.includes('timeout') || key.includes('expiry')) return <Clock className="h-4 w-4 text-gray-400" />;
-                    if (key.includes('security')) return <Shield className="h-4 w-4 text-gray-400" />;
-                    return null;
-                  };
-
-                  return (
+              {groupedSettings[activeGroup]?.length > 0 ? (
+                <div className="space-y-6">
+                  {groupedSettings[activeGroup].map(setting => (
                     <FormField
                       key={setting._id}
                       id={setting.settingKey}
@@ -240,34 +314,40 @@ const SystemSettings = () => {
                         )}
                         <Input
                           id={setting.settingKey}
-                          value={formValues[setting.settingKey]}
+                          value={formValues[setting.settingKey] || ''}
                           onChange={(e) => handleInputChange(setting.settingKey, e.target.value)}
                           disabled={!canUpdateSettings}
                           className={getSettingIcon(setting.settingKey) ? 'pl-10' : ''}
+                          placeholder={setting.settingValue}
                         />
                       </div>
                     </FormField>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">No Settings Found</h3>
+                  <p className="text-sm text-gray-500">
+                    No settings available for the {activeGroup} category.
+                  </p>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-between border-t bg-gray-50">
               <div className="text-xs text-gray-500">
-                Last updated: {new Date(settings.find(s => s.settingGroup === activeGroup)?.dateUpdated || '').toLocaleDateString()}
+                Last updated: {
+                  groupedSettings[activeGroup]?.length > 0 
+                    ? new Date(Math.max(...groupedSettings[activeGroup].map(s => new Date(s.dateUpdated).getTime()))).toLocaleDateString()
+                    : 'Never'
+                }
               </div>
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
                   icon={<RefreshCw className="h-4 w-4" />}
-                  onClick={() => {
-                    // Reset form values to original settings
-                    const originalValues = settingsData.reduce((acc, setting) => {
-                      acc[setting.settingKey] = setting.settingValue;
-                      return acc;
-                    }, {} as Record<string, string>);
-                    setFormValues(originalValues);
-                  }}
+                  onClick={handleReset}
                   disabled={!canUpdateSettings}
                 >
                   Reset
@@ -276,8 +356,8 @@ const SystemSettings = () => {
                   size="sm"
                   icon={<Save className="h-4 w-4" />}
                   onClick={handleSave}
-                  isLoading={isLoading}
-                  disabled={!canUpdateSettings}
+                  isLoading={saving}
+                  disabled={!canUpdateSettings || groupedSettings[activeGroup]?.length === 0}
                 >
                   Save Changes
                 </Button>

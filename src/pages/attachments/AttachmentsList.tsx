@@ -1,72 +1,11 @@
-import React, { useState } from 'react';
+// src/pages/attachments/AttachmentsList.tsx
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { File, Upload, Search, Download, Trash2, Eye, FileText, FileImage, FileAudio, FileVideo, FilePlus } from 'lucide-react';
+import { File, Upload, Search, Download, Trash2, Eye, FileText, FileImage, FileAudio, FileVideo, FilePlus, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../utils/auth';
-
-// Sample attachments data
-const attachmentsData = [
-  {
-    _id: '1',
-    uploaderUserId: 'user1',
-    uploaderName: 'John Doe',
-    fileName: 'document-123456.pdf',
-    originalFileName: 'Annual Report 2023.pdf',
-    filePath: '/uploads/document-123456.pdf',
-    mimeType: 'application/pdf',
-    fileSizeBytes: 2457600,
-    storageLocation: 'local',
-    createdAt: '2023-04-10T14:30:00.000Z'
-  },
-  {
-    _id: '2',
-    uploaderUserId: 'user2',
-    uploaderName: 'Jane Smith',
-    fileName: 'image-789012.jpg',
-    originalFileName: 'Campus Photo.jpg',
-    filePath: '/uploads/image-789012.jpg',
-    mimeType: 'image/jpeg',
-    fileSizeBytes: 1843200,
-    storageLocation: 'local',
-    createdAt: '2023-04-09T10:15:00.000Z'
-  },
-  {
-    _id: '3',
-    uploaderUserId: 'user1',
-    uploaderName: 'John Doe',
-    fileName: 'spreadsheet-345678.xlsx',
-    originalFileName: 'Budget 2023-2024.xlsx',
-    filePath: '/uploads/spreadsheet-345678.xlsx',
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    fileSizeBytes: 1024000,
-    storageLocation: 'local',
-    createdAt: '2023-04-08T16:45:00.000Z'
-  },
-  {
-    _id: '4',
-    uploaderUserId: 'user3',
-    uploaderName: 'Bob Johnson',
-    fileName: 'presentation-901234.pptx',
-    originalFileName: 'New Course Proposal.pptx',
-    filePath: '/uploads/presentation-901234.pptx',
-    mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    fileSizeBytes: 3686400,
-    storageLocation: 'local',
-    createdAt: '2023-04-07T09:30:00.000Z'
-  },
-  {
-    _id: '5',
-    uploaderUserId: 'user2',
-    uploaderName: 'Jane Smith',
-    fileName: 'audio-567890.mp3',
-    originalFileName: 'Lecture Recording.mp3',
-    filePath: '/uploads/audio-567890.mp3',
-    mimeType: 'audio/mpeg',
-    fileSizeBytes: 5120000,
-    storageLocation: 'local',
-    createdAt: '2023-04-06T13:20:00.000Z'
-  }
-];
+import { attachmentsApi } from '../../utils/api';
+import { Attachment } from '../../types';
 
 // Helper function to format file size
 const formatFileSize = (bytes: number) => {
@@ -87,45 +26,148 @@ const getFileIcon = (mimeType: string) => {
 
 const AttachmentsList = () => {
   const { hasPermission } = useAuth();
-  const [attachments, setAttachments] = useState(attachmentsData);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canCreateAttachment = hasPermission('attachments.create');
+  const canDeleteAttachment = hasPermission('attachments.delete');
+
+  // Load attachments from API
+  useEffect(() => {
+    loadAttachments();
+  }, []);
+
+  const loadAttachments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await attachmentsApi.getAll();
+      setAttachments(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load attachments');
+      console.error('Load attachments error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter attachments by search term
   const filteredAttachments = attachments.filter(attachment => 
     attachment.originalFileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     attachment.mimeType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    attachment.uploaderName.toLowerCase().includes(searchTerm.toLowerCase())
+    (attachment.uploaderName && attachment.uploaderName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const canCreateAttachment = hasPermission('attachments.create');
-  const canDeleteAttachment = hasPermission('attachments.delete');
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  // Simulate file upload
-  const handleUpload = () => {
-    setIsUploading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsUploading(false);
-      
-      // Add new attachment to the list
-      const newAttachment = {
-        _id: Math.random().toString(36).substring(2, 11),
-        uploaderUserId: 'user1',
-        uploaderName: 'John Doe',
-        fileName: `file-${Date.now()}.pdf`,
-        originalFileName: 'Uploaded Document.pdf',
-        filePath: `/uploads/file-${Date.now()}.pdf`,
-        mimeType: 'application/pdf',
-        fileSizeBytes: 1500000,
-        storageLocation: 'local',
-        createdAt: new Date().toISOString()
-      };
-      
+    try {
+      setUploading(true);
+      const newAttachment = await attachmentsApi.upload(file);
       setAttachments([newAttachment, ...attachments]);
-    }, 2000);
+    } catch (err: any) {
+      alert('Failed to upload file: ' + err.message);
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
+
+  const handleDelete = async (id: string, fileName: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${fileName}?`)) {
+      return;
+    }
+
+    try {
+      await attachmentsApi.delete(id);
+      setAttachments(attachments.filter(attachment => attachment._id !== id));
+    } catch (err: any) {
+      alert('Failed to delete attachment: ' + err.message);
+    }
+  };
+
+  const handleDownload = (id: string, fileName: string) => {
+    const downloadUrl = attachmentsApi.download(id);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">File Attachments</h1>
+            <p className="mt-1 text-gray-500">Manage uploaded files and documents</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">File Attachments</h1>
+            <p className="mt-1 text-gray-500">Manage uploaded files and documents</p>
+          </div>
+          <Button 
+            onClick={loadAttachments}
+            icon={<RefreshCw className="h-4 w-4" />}
+          >
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">
+                <File className="h-12 w-12 mx-auto opacity-50" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Attachments</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <Button onClick={loadAttachments} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -136,15 +178,33 @@ const AttachmentsList = () => {
             Manage uploaded files and documents
           </p>
         </div>
-        {canCreateAttachment && (
+        <div className="flex items-center gap-2">
           <Button 
-            icon={<Upload className="h-4 w-4" />}
-            onClick={handleUpload}
-            isLoading={isUploading}
+            variant="outline"
+            onClick={loadAttachments}
+            icon={<RefreshCw className="h-4 w-4" />}
           >
-            Upload File
+            Refresh
           </Button>
-        )}
+          {canCreateAttachment && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+              />
+              <Button 
+                icon={<Upload className="h-4 w-4" />}
+                onClick={() => fileInputRef.current?.click()}
+                isLoading={uploading}
+              >
+                Upload File
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
@@ -226,7 +286,7 @@ const AttachmentsList = () => {
                         {formatFileSize(attachment.fileSizeBytes)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {attachment.uploaderName}
+                        {attachment.uploaderName || 'Unknown User'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {new Date(attachment.createdAt).toLocaleDateString()}
@@ -237,15 +297,9 @@ const AttachmentsList = () => {
                             variant="ghost"
                             size="sm"
                             className="text-indigo-600 hover:text-indigo-900"
-                            icon={<Eye className="h-4 w-4" />}
-                          >
-                            <span className="sr-only">View</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-indigo-600 hover:text-indigo-900"
                             icon={<Download className="h-4 w-4" />}
+                            onClick={() => handleDownload(attachment._id, attachment.originalFileName)}
+                            title="Download file"
                           >
                             <span className="sr-only">Download</span>
                           </Button>
@@ -255,6 +309,8 @@ const AttachmentsList = () => {
                               size="sm"
                               className="text-red-600 hover:text-red-900"
                               icon={<Trash2 className="h-4 w-4" />}
+                              onClick={() => handleDelete(attachment._id, attachment.originalFileName)}
+                              title="Delete file"
                             >
                               <span className="sr-only">Delete</span>
                             </Button>
@@ -269,14 +325,14 @@ const AttachmentsList = () => {
                       <div className="flex flex-col items-center justify-center">
                         <FilePlus className="h-10 w-10 text-gray-400" />
                         <p className="mt-2">No files found</p>
-                        {canCreateAttachment && (
+                        {canCreateAttachment && !searchTerm && (
                           <Button
                             className="mt-4"
                             variant="outline"
                             size="sm"
                             icon={<Upload className="h-4 w-4" />}
-                            onClick={handleUpload}
-                            isLoading={isUploading}
+                            onClick={() => fileInputRef.current?.click()}
+                            isLoading={uploading}
                           >
                             Upload File
                           </Button>

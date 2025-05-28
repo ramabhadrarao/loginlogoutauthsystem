@@ -1,3 +1,4 @@
+// src/pages/admin/PermissionManagement.tsx
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -13,65 +14,71 @@ const PermissionManagement = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Group permissions by model
   const permissionsByModel = permissions.reduce((acc, permission) => {
-    const modelId = permission.modelId;
-    if (!acc[modelId]) {
-      acc[modelId] = [];
+    const modelName = permission.modelId?.name || permission.modelId || 'unknown';
+    if (!acc[modelName]) {
+      acc[modelName] = [];
     }
-    acc[modelId].push(permission);
+    acc[modelName].push(permission);
     return acc;
   }, {} as Record<string, Permission[]>);
 
   // Load all users and permissions
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [usersData, permissionsData] = await Promise.all([
-          usersApi.getAll(),
-          permissionsApi.getAll()
-        ]);
-        setUsers(usersData);
-        setPermissions(permissionsData);
-      } catch (error) {
-        console.error('Failed to load data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [usersData, permissionsData] = await Promise.all([
+        usersApi.getAll(),
+        permissionsApi.getAll()
+      ]);
+      setUsers(usersData);
+      setPermissions(permissionsData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load data');
+      console.error('Failed to load data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load selected user's permissions
   useEffect(() => {
     if (selectedUser) {
-      const loadUserPermissions = async () => {
-        try {
-          setLoading(true);
-          const userPerms = await usersApi.getUserPermissions(selectedUser);
-          setUserPermissions(userPerms.map(p => p.permissionKey));
-        } catch (error) {
-          console.error('Failed to load user permissions:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
       loadUserPermissions();
     } else {
       setUserPermissions([]);
     }
   }, [selectedUser]);
 
+  const loadUserPermissions = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setLoading(true);
+      const userPerms = await usersApi.getUserPermissions(selectedUser);
+      setUserPermissions(userPerms.map(p => p._id));
+    } catch (err: any) {
+      console.error('Failed to load user permissions:', err);
+      setUserPermissions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Toggle permission
-  const togglePermission = (permissionKey: string) => {
+  const togglePermission = (permissionId: string) => {
     setUserPermissions(prev => 
-      prev.includes(permissionKey)
-        ? prev.filter(p => p !== permissionKey)
-        : [...prev, permissionKey]
+      prev.includes(permissionId)
+        ? prev.filter(p => p !== permissionId)
+        : [...prev, permissionId]
     );
   };
 
@@ -84,8 +91,8 @@ const PermissionManagement = () => {
       await usersApi.assignPermissions(selectedUser, userPermissions);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      console.error('Failed to save permissions:', error);
+    } catch (err: any) {
+      alert('Failed to save permissions: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -96,6 +103,39 @@ const PermissionManagement = () => {
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Permission Management</h1>
+            <p className="mt-1 text-gray-500">Assign permissions to users to control their access to system features</p>
+          </div>
+          <Button 
+            onClick={loadData}
+            icon={<RefreshCw className="h-4 w-4" />}
+          >
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">
+                <Info className="h-12 w-12 mx-auto opacity-50" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Data</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <Button onClick={loadData} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -183,14 +223,8 @@ const PermissionManagement = () => {
                     size="sm"
                     variant="outline"
                     icon={<RefreshCw className="h-4 w-4" />}
-                    onClick={() => {
-                      const user = users.find(u => u._id === selectedUser);
-                      if (user) {
-                        // Reload permissions
-                        setSelectedUser(null);
-                        setTimeout(() => setSelectedUser(user._id), 10);
-                      }
-                    }}
+                    onClick={loadUserPermissions}
+                    isLoading={loading}
                   >
                     Reset
                   </Button>
@@ -261,21 +295,21 @@ const PermissionManagement = () => {
 
                   {/* Permission matrix */}
                   <div className="space-y-6">
-                    {Object.entries(permissionsByModel).map(([modelId, modelPermissions]) => {
-                      // Find a model name - in production this would come from the API
-                      const modelName = 
-                        modelId === '1' ? 'Users' :
-                        modelId === '2' ? 'Colleges' :
-                        modelId === '3' ? 'Attachments' :
-                        modelId === '4' ? 'Settings' :
-                        modelId === '5' ? 'Dashboard' :
-                        modelId === '6' ? 'Admin' : 'Unknown';
+                    {Object.entries(permissionsByModel).map(([modelName, modelPermissions]) => {
+                      const displayName = 
+                        modelName === 'users' ? 'Users' :
+                        modelName === 'colleges' ? 'Colleges' :
+                        modelName === 'attachments' ? 'Attachments' :
+                        modelName === 'settings' ? 'Settings' :
+                        modelName === 'dashboard' ? 'Dashboard' :
+                        modelName === 'admin' ? 'Admin' :
+                        modelName.charAt(0).toUpperCase() + modelName.slice(1);
 
                       return (
-                        <div key={modelId} className="rounded-md border border-gray-200">
+                        <div key={modelName} className="rounded-md border border-gray-200">
                           <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
                             <h3 className="text-sm font-medium text-gray-900">
-                              {modelName}
+                              {displayName}
                             </h3>
                           </div>
                           <div className="divide-y divide-gray-200">
@@ -297,16 +331,16 @@ const PermissionManagement = () => {
                                   className={`
                                     inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
                                     transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                                    ${userPermissions.includes(permission.permissionKey) ? 'bg-indigo-600' : 'bg-gray-200'}
+                                    ${userPermissions.includes(permission._id) ? 'bg-indigo-600' : 'bg-gray-200'}
                                   `}
                                   role="switch"
-                                  aria-checked={userPermissions.includes(permission.permissionKey)}
-                                  onClick={() => togglePermission(permission.permissionKey)}
+                                  aria-checked={userPermissions.includes(permission._id)}
+                                  onClick={() => togglePermission(permission._id)}
                                 >
                                   <span
                                     className={`
                                       pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                                      ${userPermissions.includes(permission.permissionKey) ? 'translate-x-5' : 'translate-x-0'}
+                                      ${userPermissions.includes(permission._id) ? 'translate-x-5' : 'translate-x-0'}
                                     `}
                                   />
                                 </button>
@@ -316,6 +350,16 @@ const PermissionManagement = () => {
                         </div>
                       );
                     })}
+                    
+                    {Object.keys(permissionsByModel).length === 0 && (
+                      <div className="text-center py-8">
+                        <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">No Permissions Available</h3>
+                        <p className="text-sm text-gray-500">
+                          No permissions found. Create some models first to generate permissions.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
