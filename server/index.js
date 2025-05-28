@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import collegeRoutes from './routes/colleges.js';
 import departmentRoutes from './routes/departments.js'; // ADD THIS
+import abacRoutes from './routes/abac.js';
 
 import attachmentRoutes from './routes/attachments.js';
 import settingsRoutes from './routes/settings.js';
@@ -56,6 +57,8 @@ app.use('/api/departments', verifyToken, departmentRoutes); // ADD THIS
 app.use('/api/attachments', verifyToken, attachmentRoutes);
 app.use('/api/settings', verifyToken, settingsRoutes);
 app.use('/api/admin', verifyToken, adminRoutes);
+app.use('/api/abac', verifyToken, abacRoutes);
+
 app.use('/api/menu', verifyToken, menuRoutes);
 
 // Test endpoint to verify file serving

@@ -11,6 +11,7 @@ import AuditLog from './pages/admin/AuditLog';
 import UsersList from './pages/users/UsersList';
 import CollegesList from './pages/colleges/CollegesList';
 import DepartmentsList from './pages/departments/DepartmentsList'; // ADD THIS
+import ABACManagement from './pages/admin/ABACManagement';
 
 
 import AttachmentsList from './pages/attachments/AttachmentsList';
@@ -87,7 +88,8 @@ function App() {
             <Route path="admin/permissions" element={<ProtectedRoute requiredPermission="permissions.manage"><PermissionManagement /></ProtectedRoute>} />
             <Route path="admin/models" element={<ProtectedRoute requiredPermission="models.manage"><ModelsManagement /></ProtectedRoute>} />
             <Route path="admin/audit-log" element={<ProtectedRoute requiredPermission="audit.read"><AuditLog /></ProtectedRoute>} />
-            
+            <Route path="admin/abac" element={<ProtectedRoute requiredPermission="abac.manage"><ABACManagement /></ProtectedRoute>} />
+
             {/* Resource routes */}
             <Route path="colleges" element={<ProtectedRoute requiredPermission="colleges.read"><CollegesList /></ProtectedRoute>} />
             <Route path="departments" element={<ProtectedRoute requiredPermission="departments.read"><DepartmentsList /></ProtectedRoute>} />
@@ -97,6 +99,7 @@ function App() {
 
             <Route path="attachments" element={<ProtectedRoute requiredPermission="attachments.read"><AttachmentsList /></ProtectedRoute>} />
             <Route path="settings" element={<ProtectedRoute requiredPermission="settings.read"><SystemSettings /></ProtectedRoute>} />
+            
           </Route>
           
           {/* Fallback route */}

@@ -212,6 +212,17 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           children: adminChildren
         });
       }
+      if (hasPermission('abac.manage')) {
+  menuItems.push({
+    _id: (itemId++).toString(),
+    name: 'ABAC Rules',
+    route: '/admin/abac',
+    icon: 'Shield',
+    requiredPermission: 'abac.manage',
+    sortOrder: 8,
+    isActive: true
+  });
+}
     }
 
     return menuItems;
