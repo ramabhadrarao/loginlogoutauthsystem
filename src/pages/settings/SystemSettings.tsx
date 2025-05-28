@@ -1,16 +1,18 @@
-// src/pages/settings/SystemSettings.tsx
+// src/pages/settings/SystemSettings.tsx - Complete updated version with cache refresh
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import FormField from '../../components/ui/FormField';
 import { useAuth } from '../../utils/auth';
+import { useSettings } from '../../hooks/useSettings'; // Add this import
 import { settingsApi } from '../../utils/api';
 import { SystemSetting } from '../../types';
 import { Settings, Save, RefreshCw, Check, Shield, Mail, Globe, Clock } from 'lucide-react';
 
 const SystemSettings = () => {
   const { hasPermission } = useAuth();
+  const { refreshSettings } = useSettings(); // Add this hook to refresh settings cache
   const [settings, setSettings] = useState<SystemSetting[]>([]);
   const [activeGroup, setActiveGroup] = useState('general');
   const [loading, setLoading] = useState(true);
@@ -97,8 +99,22 @@ const SystemSettings = () => {
         }))
       );
       
+      // Refresh the settings cache in useSettings hook
+      if (refreshSettings) {
+        await refreshSettings();
+      }
+      
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+      
+      // If we updated site.name or site.description, force a page refresh to update title
+      const updatedKeys = settingsToUpdate.map(s => s.settingKey);
+      if (updatedKeys.includes('site.name') || updatedKeys.includes('site.description')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+      
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
     } finally {
@@ -123,6 +139,8 @@ const SystemSettings = () => {
         return <Mail className="h-5 w-5" />;
       case 'security':
         return <Shield className="h-5 w-5" />;
+      case 'upload':
+        return <Settings className="h-5 w-5" />;
       default:
         return <Settings className="h-5 w-5" />;
     }
@@ -235,7 +253,7 @@ const SystemSettings = () => {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-green-800">
-                Settings saved successfully
+                Settings saved successfully! Changes will take effect shortly.
               </p>
             </div>
           </div>

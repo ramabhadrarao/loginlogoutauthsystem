@@ -1,10 +1,10 @@
-// src/pages/Dashboard.tsx
+// src/pages/Dashboard.tsx - Updated with dynamic settings
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import Button from '../components/ui/Button'; // ← ADD THIS IMPORT
-
-import { Users, Building,Building2, File, Settings, ArrowUpRight, Shield, Lock, Database, History, Plus, Eye, RefreshCw } from 'lucide-react';
+import Button from '../components/ui/Button';
+import { useSettings } from '../hooks/useSettings'; // Add this import
+import { Users, Building, Building2, File, Settings, ArrowUpRight, Shield, Lock, Database, History, Plus, Eye, RefreshCw } from 'lucide-react';
 import { useAuth } from '../utils/auth';
 import { usersApi, collegesApi, attachmentsApi, settingsApi } from '../utils/api';
 import { departmentsApi } from '../utils/api';
@@ -154,13 +154,17 @@ const QuickAction = ({ title, description, icon, to, requiredPermission, color }
 
 const Dashboard = () => {
   const { user, getEffectivePermissions } = useAuth();
+  const { getSetting } = useSettings(); // Add this hook
+  
+  // Get dynamic settings
+  const siteName = getSetting('site.name', 'Permission System');
+  const siteDescription = getSetting('site.description', 'Multi-user authentication and permission system');
   
   // State for real data
   const [stats, setStats] = useState({
     users: 0,
     colleges: 0,
-    departments: 0, // ADD THIS
-
+    departments: 0,
     attachments: 0,
     settings: 0
   });
@@ -170,8 +174,7 @@ const Dashboard = () => {
   // Get permissions for different models
   const userPerms = getEffectivePermissions('users');
   const collegePerms = getEffectivePermissions('colleges');
-  const departmentPerms = getEffectivePermissions('departments'); // ADD THIS
-
+  const departmentPerms = getEffectivePermissions('departments');
   const attachmentPerms = getEffectivePermissions('attachments');
   const settingsPerms = getEffectivePermissions('settings');
 
@@ -199,12 +202,10 @@ const Dashboard = () => {
         }
         
         if (departmentPerms.canRead) {
-            promises.push(
-              departmentsApi.getAll().then(data => { results.departments = data.length; }).catch(() => { results.departments = 0; })
-            );
-          }
-
-
+          promises.push(
+            departmentsApi.getAll().then(data => { results.departments = data.length; }).catch(() => { results.departments = 0; })
+          );
+        }
 
         if (attachmentPerms.canRead) {
           promises.push(
@@ -229,7 +230,7 @@ const Dashboard = () => {
     };
 
     loadStats();
-  }, [userPerms.canRead, collegePerms.canRead, departmentPerms.canRead,attachmentPerms.canRead, settingsPerms.canRead]);
+  }, [userPerms.canRead, collegePerms.canRead, departmentPerms.canRead, attachmentPerms.canRead, settingsPerms.canRead]);
 
   const refreshStats = () => {
     setLoading(true);
@@ -239,6 +240,11 @@ const Dashboard = () => {
     }, 100);
   };
 
+  // Update document title dynamically
+  useEffect(() => {
+    document.title = `Dashboard - ${siteName}`;
+  }, [siteName]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -247,6 +253,8 @@ const Dashboard = () => {
           <p className="mt-1 text-gray-500">
             Welcome back, {user?.username}! {user?.isSuperAdmin && '👑'}
           </p>
+          {/* Show dynamic site description */}
+          <p className="mt-1 text-sm text-gray-400">{siteDescription}</p>
         </div>
         <Button
           variant="outline"
@@ -320,16 +328,16 @@ const Dashboard = () => {
         )}
 
         {departmentPerms.canRead && (
-        <StatCard
-          title="Departments"
-          value={stats.departments}
-          icon={<Building2 className="h-6 w-6" />}
-          description="Academic departments"
-          linkTo="/departments"
-          permissions={departmentPerms}
-          loading={loading}
-        />
-      )}
+          <StatCard
+            title="Departments"
+            value={stats.departments}
+            icon={<Building2 className="h-6 w-6" />}
+            description="Academic departments"
+            linkTo="/departments"
+            permissions={departmentPerms}
+            loading={loading}
+          />
+        )}
         
         {attachmentPerms.canRead && (
           <StatCard
@@ -357,7 +365,7 @@ const Dashboard = () => {
       </div>
 
       {/* Show message if no stats are available */}
-      {!userPerms.canRead && !collegePerms.canRead && !attachmentPerms.canRead && !settingsPerms.canRead && (
+      {!userPerms.canRead && !collegePerms.canRead && !departmentPerms.canRead && !attachmentPerms.canRead && !settingsPerms.canRead && (
         <Card>
           <CardContent className="p-12 text-center">
             <Shield className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -408,6 +416,7 @@ const Dashboard = () => {
             requiredPermission="colleges.create"
             color="green"
           />
+          
           <QuickAction
             title="Add Department"
             description="Create new department"
@@ -416,6 +425,7 @@ const Dashboard = () => {
             requiredPermission="departments.create"
             color="blue"
           />
+          
           <QuickAction
             title="Upload Files"
             description="Add new attachments"
@@ -489,19 +499,19 @@ const Dashboard = () => {
               )}
 
               {departmentPerms.canRead && (
-              <div className="text-center p-4 rounded-lg border border-gray-200">
-                <Building2 className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
-                <h4 className="font-medium text-gray-900">Departments</h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  {[
-                    departmentPerms.canRead && 'Read',
-                    departmentPerms.canCreate && 'Create',
-                    departmentPerms.canUpdate && 'Update',
-                    departmentPerms.canDelete && 'Delete'
-                  ].filter(Boolean).join(', ')}
-                </p>
-              </div>
-            )}
+                <div className="text-center p-4 rounded-lg border border-gray-200">
+                  <Building2 className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+                  <h4 className="font-medium text-gray-900">Departments</h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {[
+                      departmentPerms.canRead && 'Read',
+                      departmentPerms.canCreate && 'Create',
+                      departmentPerms.canUpdate && 'Update',
+                      departmentPerms.canDelete && 'Delete'
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              )}
               
               {attachmentPerms.canRead && (
                 <div className="text-center p-4 rounded-lg border border-gray-200">

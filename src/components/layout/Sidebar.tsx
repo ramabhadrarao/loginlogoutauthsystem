@@ -1,7 +1,8 @@
-// src/components/layout/Sidebar.tsx - Fixed version
+// src/components/layout/Sidebar.tsx - Updated version with dynamic settings
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../utils/auth';
+import { useSettings } from '../../hooks/useSettings'; // Add this import
 import { MenuItem } from '../../types';
 import { X } from 'lucide-react';
 import * as Icons from 'lucide-react';
@@ -20,8 +21,12 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const { hasPermission, hasAnyPermission, user, getEffectivePermissions } = useAuth();
+  const { getSetting } = useSettings(); // Add this hook
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Get dynamic settings
+  const siteName = getSetting('site.name', 'PermSys');
 
   useEffect(() => {
     const loadMenuItems = async () => {
@@ -297,7 +302,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               <div className="h-8 w-8 rounded-md bg-indigo-600 flex items-center justify-center">
                 <Icons.Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="ml-2 text-xl font-semibold text-gray-900">PermSys</span>
+              <span className="ml-2 text-xl font-semibold text-gray-900">{siteName}</span>
             </div>
             <button
               type="button"
@@ -355,13 +360,13 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           flex flex-col h-full
         `}
       >
-        {/* Sidebar header - Fixed */}
+        {/* Sidebar header - Fixed - Now uses dynamic site name */}
         <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4 flex-shrink-0 bg-white">
           <div className="flex items-center">
             <div className="h-8 w-8 rounded-md bg-indigo-600 flex items-center justify-center">
               <Icons.Shield className="h-4 w-4 text-white" />
             </div>
-            <span className="ml-2 text-xl font-semibold text-gray-900">PermSys</span>
+            <span className="ml-2 text-xl font-semibold text-gray-900">{siteName}</span>
           </div>
           <button
             type="button"
