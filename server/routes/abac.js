@@ -4,6 +4,7 @@ import PolicyRule from '../models/PolicyRule.js';
 import AttributeDefinition from '../models/AttributeDefinition.js';
 import UserAttribute from '../models/UserAttribute.js';
 import PolicyEvaluation from '../models/PolicyEvaluation.js';
+import Model from '../models/Model.js'; // ✅ ADD THIS MISSING IMPORT
 import { checkPermission } from '../middleware/auth.js';
 
 const router = express.Router();
