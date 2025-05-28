@@ -5,7 +5,7 @@ import { Department } from '../types';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create a fetch function with authorization header
-const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
+export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('token');
   
   const headers = {

@@ -121,14 +121,14 @@ const PolicyAuditViewer = () => {
     const headers = ['Timestamp', 'User', 'Resource', 'Action', 'Decision', 'Duration', 'Policies Evaluated'];
     const csvContent = [
       headers.join(','),
-      ...evaluations.map(eval => [
-        new Date(eval.timestamp).toISOString(),
-        eval.userId,
-        `${eval.resource.modelName}${eval.resource.resourceId ? `:${eval.resource.resourceId}` : ''}`,
-        eval.action,
-        eval.finalDecision,
-        formatDuration(eval.evaluationTimeMs),
-        eval.evaluatedPolicies.length
+        ...evaluations.map(evaluation => [
+        new Date(evaluation.timestamp).toISOString(),
+        evaluation.userId,
+        `${evaluation.resource.modelName}${evaluation.resource.resourceId ? `:${evaluation.resource.resourceId}` : ''}`,
+        evaluation.action,
+        evaluation.finalDecision,
+        formatDuration(evaluation.evaluationTimeMs),
+        evaluation.evaluatedPolicies.length
       ].join(','))
     ].join('\n');
 
