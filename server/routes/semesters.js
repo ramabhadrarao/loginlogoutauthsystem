@@ -1,4 +1,4 @@
-// server/routes/semesters.js
+// server/routes/semesters.js - Updated with removed academic year date validation
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Semester from '../models/Semester.js';
@@ -205,10 +205,11 @@ router.post('/', checkPermission('semesters.create'), semesterValidation, async 
       return res.status(400).json({ message: 'End date must be after start date' });
     }
 
-    // Validate semester dates are within academic year
-    if (startDateObj < academicYear.startDate || endDateObj > academicYear.endDate) {
-      return res.status(400).json({ message: 'Semester dates must be within the academic year' });
-    }
+    // REMOVED: Academic year date validation
+    // The following validation has been removed:
+    // if (startDateObj < academicYear.startDate || endDateObj > academicYear.endDate) {
+    //   return res.status(400).json({ message: 'Semester dates must be within the academic year' });
+    // }
 
     // Check for duplicate semester numbers in the same academic year and regulation
     const existingSemester = await Semester.findOne({
@@ -307,10 +308,11 @@ router.put('/:id', checkPermission('semesters.update'), semesterValidation, asyn
       return res.status(400).json({ message: 'End date must be after start date' });
     }
 
-    // Validate semester dates are within academic year
-    if (startDateObj < academicYear.startDate || endDateObj > academicYear.endDate) {
-      return res.status(400).json({ message: 'Semester dates must be within the academic year' });
-    }
+    // REMOVED: Academic year date validation
+    // The following validation has been removed:
+    // if (startDateObj < academicYear.startDate || endDateObj > academicYear.endDate) {
+    //   return res.status(400).json({ message: 'Semester dates must be within the academic year' });
+    // }
 
     const updateData = {
       name: name.trim(),
